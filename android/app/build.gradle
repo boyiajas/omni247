@@ -72,6 +72,27 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def envFile = rootProject.file(".env.development")
+def env = [:]
+if (envFile.exists()) {
+    envFile.eachLine { line ->
+        def trimmed = line.trim()
+        if (!trimmed || trimmed.startsWith("#")) {
+            return
+        }
+        def idx = trimmed.indexOf("=")
+        if (idx <= 0) {
+            return
+        }
+        def key = trimmed.substring(0, idx).trim()
+        def value = trimmed.substring(idx + 1).trim()
+        if (value.startsWith('"') && value.endsWith('"') && value.length() >= 2) {
+            value = value.substring(1, value.length() - 1)
+        }
+        env[key] = value
+    }
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -84,6 +105,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        manifestPlaceholders = [
+            GOOGLE_MAPS_API_KEY: env.get("GOOGLE_MAPS_API_KEY", "")
+        ]
     }
     signingConfigs {
         debug {

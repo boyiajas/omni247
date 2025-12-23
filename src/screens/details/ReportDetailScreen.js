@@ -11,6 +11,7 @@ import {
     Platform,
     Alert,
     ActivityIndicator,
+    Share,
 } from 'react-native';
 import { reportsAPI } from '../../services/api/reports';
 import { commentsAPI } from '../../services/api/comments';
@@ -19,6 +20,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors, typography, spacing } from '../../theme';
 import { formatRelativeTime } from '../../utils/formatters';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../hooks/useNotifications';
 
 // Placeholder image for reports without media
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&q=80';
@@ -36,10 +38,12 @@ const categoryColors = {
 
 const ReportDetailScreen = ({ route, navigation }) => {
     const { user } = useAuth();
-    const paramId = route.params?.id || route.params?.reportId || '';
-    const id = paramId.toString().replace('api-', '');
+    const { refreshUnreadCount } = useNotifications();
+    const paramReport = route.params?.report || null;
+    const paramId = route.params?.id || route.params?.reportId || paramReport?.id || '';
+    const id = paramId ? paramId.toString().replace('api-', '') : '';
 
-    const [report, setReport] = useState(null);
+    const [report, setReport] = useState(paramReport);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [liked, setLiked] = useState(false);
@@ -47,6 +51,8 @@ const ReportDetailScreen = ({ route, navigation }) => {
     const [comments, setComments] = useState([]);
     const [commentsLoading, setCommentsLoading] = useState(false);
     const [addingComment, setAddingComment] = useState(false);
+    const [userRating, setUserRating] = useState(0);
+    const [ratingLoading, setRatingLoading] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -85,6 +91,7 @@ const ReportDetailScreen = ({ route, navigation }) => {
                 time: formatRelativeTime(c.created_at),
                 avatar: c.user?.avatar_url,
             })));
+            refreshUnreadCount();
         } catch (err) {
             console.error('Error loading comments:', err);
         } finally {
@@ -96,8 +103,37 @@ const ReportDetailScreen = ({ route, navigation }) => {
         setLiked(!liked);
     };
 
-    const handleShare = () => {
-        Alert.alert('Share', 'Share functionality coming soon!');
+    const handleRateReport = async (rating) => {
+        if (!id || isOwner) {
+            return;
+        }
+
+        try {
+            setRatingLoading(true);
+            setUserRating(rating);
+            await reportsAPI.rateReport(id, rating);
+            await loadReport();
+        } catch (error) {
+            Alert.alert('Error', 'Unable to submit rating.');
+        } finally {
+            setRatingLoading(false);
+        }
+    };
+
+    const handleShare = async () => {
+        try {
+            const title = report?.title || 'Report';
+            const location = report?.address || report?.location_address || report?.city || 'Unknown location';
+            const description = report?.description ? `\n\n${report.description}` : '';
+            const message = `${title}\n${location}${description}`;
+
+            await Share.share({
+                title,
+                message,
+            });
+        } catch (error) {
+            Alert.alert('Error', 'Unable to open share options.');
+        }
     };
 
     const handleAddComment = async () => {
@@ -263,6 +299,31 @@ const ReportDetailScreen = ({ route, navigation }) => {
                         <View style={styles.statItem}>
                             <Icon name="comment-outline" size={18} color={colors.neutralMedium} />
                             <Text style={styles.statText}>{comments.length} comments</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.ratingSection}>
+                        <Text style={styles.ratingLabel}>
+                            {isOwner ? 'Your report rating' : 'Rate this report'}
+                        </Text>
+                        <View style={styles.ratingRow}>
+                            {[1, 2, 3, 4, 5].map((value) => (
+                                <TouchableOpacity
+                                    key={value}
+                                    style={styles.ratingButton}
+                                    onPress={() => handleRateReport(value)}
+                                    disabled={isOwner || ratingLoading}
+                                >
+                                    <Icon
+                                        name={value <= (userRating || 0) ? 'star' : 'star-outline'}
+                                        size={22}
+                                        color={value <= (userRating || 0) ? colors.warning : colors.neutralMedium}
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                            {ratingLoading && (
+                                <ActivityIndicator size="small" color={colors.primary} style={styles.ratingLoader} />
+                            )}
                         </View>
                     </View>
 
@@ -520,6 +581,25 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: colors.neutralMedium,
         marginLeft: 6,
+    },
+    ratingSection: {
+        marginTop: 12,
+        marginBottom: 6,
+    },
+    ratingLabel: {
+        fontSize: 12,
+        color: colors.neutralMedium,
+        marginBottom: 6,
+    },
+    ratingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    ratingButton: {
+        marginRight: 6,
+    },
+    ratingLoader: {
+        marginLeft: 8,
     },
     actionBar: {
         flexDirection: 'row',

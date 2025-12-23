@@ -21,12 +21,13 @@ const getNotificationIcon = (type) => {
 };
 
 export default function NotificationsScreen({ navigation }) {
-  const { notifications, loadNotifications, markAsRead } = useNotifications();
+  const { notifications, loadNotifications, markAsRead, refreshUnreadCount } = useNotifications();
 
   useFocusEffect(
     useCallback(() => {
       loadNotifications();
-    }, [loadNotifications])
+      refreshUnreadCount();
+    }, [loadNotifications, refreshUnreadCount])
   );
 
   const handleNotificationPress = async (item) => {

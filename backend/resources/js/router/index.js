@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth';
 import LoginView from '@/views/LoginView.vue';
 import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import DashboardView from '@/views/DashboardView.vue';
+import AnalyticsView from '@/views/AnalyticsView.vue';
 import ReportsView from '@/views/ReportsView.vue';
 import ReportDetailView from '@/views/ReportDetailView.vue';
 import UsersView from '@/views/UsersView.vue';
@@ -32,6 +33,11 @@ const router = createRouter({
                     path: '',
                     name: 'dashboard',
                     component: DashboardView,
+                },
+                {
+                    path: 'analytics',
+                    name: 'analytics',
+                    component: AnalyticsView,
                 },
                 {
                     path: 'reports',

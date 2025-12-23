@@ -76,7 +76,8 @@ export default function MapScreen({ navigation }) {
   });
   const [legendExpanded, setLegendExpanded] = useState(true);
   const { categories: availableCategories } = useCategories();
-  const { unreadCount } = useNotifications();
+  const { unreadCount, realtimeStatus } = useNotifications();
+  const isLive = realtimeStatus === 'subscribed';
 
   const filteredReports = selectedCategory
     ? mockReports.filter(report => report.category === selectedCategory)
@@ -99,19 +100,25 @@ export default function MapScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Global Eye</Text>
-        <TouchableOpacity
-          style={styles.notificationButton}
-          onPress={() => navigation.navigate('Notifications')}
-        >
-          <Icon name="bell-outline" size={24} color={colors.neutralDark} />
-          {unreadCount > 0 && (
-            <View style={styles.notificationBadge}>
-              <Text style={styles.notificationBadgeText}>
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <View style={styles.notificationWrap}>
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Icon name="bell-outline" size={24} color={colors.neutralDark} />
+            {unreadCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <View style={styles.liveRow}>
+            <View style={[styles.liveDot, isLive ? styles.liveDotOn : styles.liveDotOff]} />
+            <Text style={styles.liveText}>Live</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.mapContainer}>
@@ -272,6 +279,10 @@ const styles = StyleSheet.create({
   notificationButton: {
     position: 'relative',
   },
+  notificationWrap: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+  },
   notificationBadge: {
     position: 'absolute',
     top: -5,
@@ -287,6 +298,29 @@ const styles = StyleSheet.create({
     ...typography.small,
     color: colors.white,
     fontSize: 10,
+  },
+  liveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  liveDotOn: {
+    backgroundColor: '#16A34A',
+  },
+  liveDotOff: {
+    backgroundColor: '#DC2626',
+  },
+  liveText: {
+    fontSize: 10,
+    color: colors.neutralMedium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   mapContainer: {
     flex: 1,

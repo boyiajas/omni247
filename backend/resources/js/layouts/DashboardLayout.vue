@@ -23,6 +23,7 @@ const auth = useAuthStore();
 
 const titles = {
     dashboard: 'Command Dashboard',
+    analytics: 'Analytics & Trends',
     reports: 'Incident Reports',
     users: 'User Directory',
     roles: 'Roles & Permissions',

@@ -17,6 +17,7 @@ import ReportMediaScreen from '../screens/report/ReportMediaScreen';
 import ReportDescriptionScreen from '../screens/report/ReportDescriptionScreen';
 import ReportPreviewScreen from '../screens/report/ReportPreviewScreen';
 import ReportSuccessScreen from '../screens/report/ReportSuccessScreen';
+import EditReportScreen from '../screens/report/EditReportScreen';
 
 // Detail Screens
 import ReportDetailScreen from '../screens/details/ReportDetailScreen';
@@ -52,6 +53,7 @@ const ReportStack = () => (
         <Stack.Screen name="ReportDescription" component={ReportDescriptionScreen} />
         <Stack.Screen name="ReportPreview" component={ReportPreviewScreen} />
         <Stack.Screen name="ReportSuccess" component={ReportSuccessScreen} />
+        <Stack.Screen name="EditReport" component={EditReportScreen} />
     </Stack.Navigator>
 );
 
@@ -59,8 +61,9 @@ const MainNavigator = () => {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen name="ReportFlow" component={ReportStack} />
-            <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+        <Stack.Screen name="ReportFlow" component={ReportStack} />
+        <Stack.Screen name="EditReport" component={EditReportScreen} />
+        <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
             <Stack.Screen name="UserProfile" component={UserProfileScreen} />
             <Stack.Screen name="AgencyDetail" component={AgencyDetailScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />

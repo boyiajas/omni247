@@ -43,4 +43,11 @@ export const reportsAPI = {
             params: { search: query },
         });
     },
+
+    rateReport: async (id, rating, comment = null) => {
+        return ApiClient.post(`${config.ENDPOINTS.REPORTS}/${id}/rate`, {
+            rating,
+            comment,
+        });
+    },
 };

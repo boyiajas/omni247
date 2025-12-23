@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\NotificationCreatedEvent;
 use App\Models\User;
 use App\Models\Notification as NotificationModel;
 use Illuminate\Bus\Queueable;
@@ -32,6 +33,7 @@ class SendNotificationJob implements ShouldQueue
             'body' => $this->body,
             'data' => $this->data,
         ]);
+        event(new NotificationCreatedEvent($notification));
 
         // Send push notification via FCM
         if ($this->user->fcm_token) {

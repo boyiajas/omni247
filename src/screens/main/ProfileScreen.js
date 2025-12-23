@@ -17,11 +17,13 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
+import { reportsAPI } from '../../services/api/reports';
 
 export default function ProfileScreen({ navigation }) {
   const { logout, user: authUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [reportCount, setReportCount] = useState(0);
   const [editForm, setEditForm] = useState({
     name: '',
     email: '',
@@ -47,6 +49,28 @@ export default function ProfileScreen({ navigation }) {
     }
     setLoading(false);
   }, [authUser]);
+
+  useEffect(() => {
+    const fetchReportCount = async () => {
+      if (!authUser?.id) return;
+      try {
+        const response = await reportsAPI.getUserReports();
+        const total = response.data?.total ?? response.data?.meta?.total;
+        if (typeof total === 'number') {
+          setReportCount(total);
+        } else if (Array.isArray(response.data?.data)) {
+          setReportCount(response.data.data.length);
+        } else {
+          setReportCount(authUser?.total_reports || 0);
+        }
+      } catch (error) {
+        console.error('Error loading report count:', error);
+        setReportCount(authUser?.total_reports || 0);
+      }
+    };
+
+    fetchReportCount();
+  }, [authUser?.id, authUser?.total_reports]);
 
   const handleLogout = () => {
     Alert.alert(
@@ -172,7 +196,7 @@ export default function ProfileScreen({ navigation }) {
 
   const renderStatsCards = () => {
     const stats = [
-      { label: 'Reports', value: userData?.total_reports || 0, icon: 'file-chart', color: '#0ea5e9' },
+      { label: 'Reports', value: reportCount || 0, icon: 'file-chart', color: '#0ea5e9' },
       { label: 'Reputation', value: userData?.reputation_score || 0, icon: 'star-circle', color: '#f97316' },
       { label: 'Points', value: userData?.total_points || 0, icon: 'trophy-award', color: '#22c55e' },
     ];

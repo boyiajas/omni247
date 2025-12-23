@@ -18,16 +18,11 @@ export const notificationsAPI = {
         return ApiClient.post(`${config.ENDPOINTS.NOTIFICATIONS}/read-all`);
     },
 
-    registerDevice: async (token, platform = 'android') => {
-        return ApiClient.post(config.ENDPOINTS.REGISTER_DEVICE, {
-            token,
-            platform,
-        });
+    registerDevice: async (payload) => {
+        return ApiClient.post(config.ENDPOINTS.REGISTER_DEVICE, payload);
     },
 
-    unregisterDevice: async (token) => {
-        return ApiClient.post(`${config.ENDPOINTS.REGISTER_DEVICE}/unregister`, {
-            token,
-        });
+    unregisterDevice: async (payload) => {
+        return ApiClient.post(`${config.ENDPOINTS.REGISTER_DEVICE}/unregister`, payload);
     },
 };

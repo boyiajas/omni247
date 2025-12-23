@@ -164,7 +164,7 @@ export default function MyFavoritesScreen({ navigation }) {
                     <Text style={styles.emptySubtitle}>Save reports you care about to revisit them quickly.</Text>
                     <TouchableOpacity
                         style={styles.primaryButton}
-                        onPress={() => navigation.navigate('NewsFeed')}>
+                        onPress={() => navigation.navigate('MainTabs', { screen: 'NewsFeed' })}>
                         <Text style={styles.primaryButtonText}>Browse reports</Text>
                     </TouchableOpacity>
                 </View>

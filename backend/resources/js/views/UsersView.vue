@@ -40,12 +40,12 @@
                         </div>
                     </td>
                     <td>
-                        <select v-model="user.role_id" @change="updateRole(user)">
+                        <select v-model="user.role_id" @click.stop @change="updateRole(user)">
                             <option v-for="role in roles" :key="role.id" :value="role.id">{{ role.name }}</option>
                         </select>
                     </td>
                     <td>
-                        <select v-model="user.status" @change="updateStatus(user)">
+                        <select v-model="user.status" @click.stop @change="updateStatus(user)">
                             <option value="active">Active</option>
                             <option value="suspended">Suspended</option>
                             <option value="pending">Pending</option>

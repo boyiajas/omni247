@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Events\NewReportEvent;
 use App\Events\ReportUpdatedEvent;
 
@@ -69,6 +70,11 @@ class Report extends Model
     public function ratings()
     {
         return $this->hasMany(Rating::class);
+    }
+
+    public function views(): HasMany
+    {
+        return $this->hasMany(ReportView::class);
     }
 
     public function bookmarkedBy()

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Report;
 use App\Models\Category;
+use App\Models\ReportView;
 use App\Jobs\ModerateReportJob;
 use App\Events\EmergencyAlertEvent;
 use Illuminate\Http\Request;
@@ -13,8 +14,17 @@ class ReportController extends Controller
 {
     public function index(Request $request)
     {
+        $trendWindowStart = now()->subHours(3);
         $query = Report::with(['user', 'category', 'media'])
-            ->withCount('comments')
+            ->withCount([
+                'comments',
+                'comments as recent_comments_count' => function ($q) use ($trendWindowStart) {
+                    $q->where('created_at', '>=', $trendWindowStart);
+                },
+                'views as recent_views_count' => function ($q) use ($trendWindowStart) {
+                    $q->where('created_at', '>=', $trendWindowStart);
+                },
+            ])
             ->latest();
 
         // Filter by status
@@ -33,6 +43,13 @@ class ReportController extends Controller
         }
 
         $reports = $query->paginate(20);
+
+        $reports->getCollection()->transform(function ($report) {
+            $recentComments = (int) ($report->recent_comments_count ?? 0);
+            $recentViews = (int) ($report->recent_views_count ?? 0);
+            $report->is_trending = $recentComments >= 5 || $recentViews >= 20;
+            return $report;
+        });
 
         return response()->json($reports);
     }
@@ -73,12 +90,17 @@ class ReportController extends Controller
         return response()->json($report->load(['category', 'media']), 201);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $report = Report::with(['user', 'category', 'media', 'ratings'])
             ->findOrFail($id);
 
         $report->incrementViews();
+        ReportView::create([
+            'report_id' => $report->id,
+            'user_id' => $request->user()->id,
+            'viewed_at' => now(),
+        ]);
 
         return response()->json($report);
     }
@@ -144,6 +166,8 @@ class ReportController extends Controller
             ['user_id' => $request->user()->id],
             $validated
         );
+
+        $report->calculateAverageRating();
 
         return response()->json([
             'rating' => $rating,

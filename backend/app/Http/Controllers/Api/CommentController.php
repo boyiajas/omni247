@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\CommentView;
+use App\Events\NotificationCreatedEvent;
 use App\Models\Notification;
 use App\Models\Report;
 use Illuminate\Http\Request;
@@ -86,7 +87,7 @@ class CommentController extends Controller
             && $report->user_id !== auth()->id()
             && $report->user
         ) {
-            Notification::create([
+            $notification = Notification::create([
                 'user_id' => $report->user_id,
                 'type' => 'comment',
                 'title' => 'New comment on your report',
@@ -96,6 +97,7 @@ class CommentController extends Controller
                     'comment_id' => $comment->id,
                 ],
             ]);
+            event(new NotificationCreatedEvent($notification));
         }
 
         // Reload with user relationship

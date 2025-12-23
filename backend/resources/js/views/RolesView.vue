@@ -116,25 +116,25 @@ onBeforeUnmount(() => {
 .roles-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    gap: 18px;
+    gap: 12px;
 }
 
 .role-list,
 .role-form {
     background: white;
     border-radius: 24px;
-    padding: 20px;
+    padding: 16px;
     box-shadow: 0 20px 40px rgba(15, 23, 42, 0.05);
 }
 
 .role-card {
     border: 1px solid #e2e8f0;
     border-radius: 18px;
-    padding: 14px;
-    margin-bottom: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
     display: flex;
     justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
 }
 
 .role-name {
@@ -152,14 +152,14 @@ onBeforeUnmount(() => {
 }
 
 .role-desc {
-    margin-top: 8px;
+    margin-top: 6px;
     color: #475569;
 }
 
 .role-meta {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     align-items: flex-end;
 }
 
@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
 button {
     border: none;
     border-radius: 10px;
-    padding: 8px 12px;
+    padding: 6px 10px;
     background: #0ea5e9;
     color: white;
     cursor: pointer;
@@ -188,19 +188,19 @@ button.danger {
 .role-form form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 input,
 textarea {
     border-radius: 10px;
     border: 1px solid #cbd5f5;
-    padding: 8px 12px;
+    padding: 6px 10px;
     font-size: 13px;
 }
 
 .form-actions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
 }
 </style>

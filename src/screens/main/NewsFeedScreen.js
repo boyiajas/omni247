@@ -16,8 +16,10 @@ import {
 import { colors, typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { reportsAPI } from '../../services/api/reports';
+import { commentsAPI } from '../../services/api/comments';
 import { favoritesAPI } from '../../services/api/favorites';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import useCategories from '../../hooks/useCategories';
 
 // Placeholder image for reports without media
@@ -36,104 +38,6 @@ const categorySlugToName = {
   7: 'other',
 };
 
-// Mock data for news feed (kept as fallback and examples)
-const mockFeedData = [
-  {
-    id: 'mock-1',
-    title: 'Major Protest Downtown',
-    description: 'Thousands gather for climate change protest in downtown area',
-    category: 'politics',
-    location: 'Times Square, New York',
-    distance: '2.0 km away',
-    rating: 4.8,
-    reportsCount: 1200,
-    timeAgo: '16 min ago',
-    user: {
-      name: 'Sarah Chen',
-      isVerified: true,
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-    },
-    media: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0',
-    isTrending: true,
-    credibility: 'high',
-  },
-  {
-    id: 'mock-2',
-    title: 'Times Square New Year Celebration',
-    description: 'Massive crowd gathers for New Year celebration',
-    category: 'event',
-    location: 'Times Square, New York',
-    distance: '4.2 km away',
-    rating: 4.2,
-    reportsCount: 248,
-    timeAgo: '1 hr ago',
-    user: {
-      name: 'Mike Johnson',
-      isVerified: true,
-      avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    },
-    media: 'https://images.unsplash.com/photo-1543269865-cbf427effbad',
-    isTrending: true,
-    credibility: 'medium',
-  },
-  {
-    id: 'mock-3',
-    title: 'Suspicious Activity Reported',
-    description: 'Police investigating suspicious activity in Central Park',
-    category: 'crime',
-    location: 'Central Park, New York',
-    distance: '3.1 km away',
-    rating: 3.1,
-    reportsCount: 15,
-    timeAgo: '2 hr ago',
-    user: {
-      name: null, // Anonymous
-      isVerified: false,
-    },
-    media: null,
-    isTrending: false,
-    credibility: 'low',
-  },
-  {
-    id: 'mock-4',
-    title: 'Community Cleanup Event',
-    description: 'Volunteers gather for monthly community cleanup',
-    category: 'environment',
-    location: 'Brooklyn Park, New York',
-    distance: '5.7 km away',
-    rating: 4.9,
-    reportsCount: 87,
-    timeAgo: '3 hr ago',
-    user: {
-      name: 'Maria Gonzalez',
-      isVerified: true,
-      avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-    },
-    media: 'https://images.unsplash.com/photo-1561070791-2526d30994b5',
-    isTrending: false,
-    credibility: 'high',
-  },
-  {
-    id: 'mock-5',
-    title: 'Building Fire - Downtown',
-    description: 'Firefighters responding to residential building fire',
-    category: 'accident',
-    location: 'Financial District, New York',
-    distance: '1.8 km away',
-    rating: 4.5,
-    reportsCount: 342,
-    timeAgo: '45 min ago',
-    user: {
-      name: 'David Wilson',
-      isVerified: true,
-      avatar: 'https://randomuser.me/api/portraits/men/67.jpg',
-    },
-    media: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab',
-    isTrending: true,
-    credibility: 'high',
-  },
-];
-
 const categoryColors = {
   crime: colors.secondary,
   event: colors.warning,
@@ -142,6 +46,26 @@ const categoryColors = {
   politics: '#7C3AED',
   infrastructure: '#4F46E5',
   other: colors.neutralMedium,
+};
+
+const HeaderNotificationsButton = ({ navigation }) => {
+  const { unreadCount } = useNotifications();
+
+  return (
+    <TouchableOpacity
+      style={styles.notificationButton}
+      onPress={() => navigation.navigate('Notifications')}
+    >
+      <Icon name="bell-outline" size={24} color={colors.neutralDark} />
+      {unreadCount > 0 && (
+        <View style={styles.notificationBadge}>
+          <Text style={styles.notificationBadgeText}>
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
 };
 
 // Helper function to format time ago
@@ -198,7 +122,7 @@ const transformApiReport = (report) => {
     category: categorySlugToName[report.category_id] || 'other',
     location: report.address || report.location_address || 'Unknown location',
     distance: 'Nearby',
-    rating: parseFloat(report.average_rating) || 4.0,
+    rating: parseFloat(report.average_rating) || 0,
     reportsCount: report.views_count || 1,
     commentsCount: report.comments_count || 0, // From withCount('comments')
     timeAgo: formatTimeAgo(report.created_at),
@@ -208,7 +132,7 @@ const transformApiReport = (report) => {
       avatar: report.user?.avatar_url || null,
     },
     media: mediaUrl,
-    isTrending: report.is_trending || report.views_count > 100 || false,
+    isTrending: report.is_trending || false,
     credibility: parseFloat(report.average_rating) >= 4 ? 'high' : parseFloat(report.average_rating) >= 2.5 ? 'medium' : 'low',
     isFromApi: true, // Flag to identify API reports
   };
@@ -217,12 +141,18 @@ const transformApiReport = (report) => {
 export default function NewsFeedScreen({ navigation }) {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
-  const [feedData, setFeedData] = useState(mockFeedData);
+  const [feedData, setFeedData] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [favorites, setFavorites] = useState(new Set()); // Track favorited report IDs
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [expandedReplyId, setExpandedReplyId] = useState(null);
+  const [commentsByReport, setCommentsByReport] = useState({});
+  const [commentDrafts, setCommentDrafts] = useState({});
+  const [commentLoadingIds, setCommentLoadingIds] = useState(new Set());
+  const [commentSubmittingIds, setCommentSubmittingIds] = useState(new Set());
   const { categories: fetchedCategories } = useCategories();
 
   const categories = useMemo(
@@ -340,16 +270,14 @@ export default function NewsFeedScreen({ navigation }) {
       // Transform verified API reports to feed format
       const transformedReports = verifiedReports.map(transformApiReport);
 
-      // Combine API reports (at the top) with mock data
-      // API reports come first so newest submitted reports appear at top
-      setFeedData([...transformedReports, ...mockFeedData]);
+      setFeedData(transformedReports);
     } catch (error) {
-      console.warn('Error fetching reports, using mock data:', error.message);
-      // On error, just use mock data
-      setFeedData(mockFeedData);
+      console.warn('Error fetching reports:', error.message);
+      setFeedData([]);
     } finally {
       setRefreshing(false);
       setLoading(false);
+      setVisibleCount(5);
     }
   };
 
@@ -359,31 +287,103 @@ export default function NewsFeedScreen({ navigation }) {
   };
 
   const handleReportPress = (report) => {
-    navigation.navigate('ReportDetail', { reportId: report.id });
+    const reportId = report?.id?.toString().replace('api-', '');
+    navigation.navigate('ReportDetail', { reportId });
   };
 
-  const renderTrendingSection = () => (
-    <View style={styles.trendingSection}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>TRENDING NOW</Text>
-        <TouchableOpacity>
-          <Text style={styles.seeAllText}>See All</Text>
-        </TouchableOpacity>
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.trendingList}>
-        {feedData
-          .filter(item => item.isTrending)
-          .map(item => (
+  const loadCommentsForReport = async (reportId) => {
+    if (!reportId) return;
+    if (commentLoadingIds.has(reportId)) return;
+
+    setCommentLoadingIds(prev => new Set(prev).add(reportId));
+    try {
+      const response = await commentsAPI.getComments(reportId);
+      const commentsData = response.data || [];
+      setCommentsByReport(prev => ({
+        ...prev,
+        [reportId]: commentsData,
+      }));
+    } catch (error) {
+      console.error('Error loading comments:', error);
+    } finally {
+      setCommentLoadingIds(prev => {
+        const next = new Set(prev);
+        next.delete(reportId);
+        return next;
+      });
+    }
+  };
+
+  const handleToggleReply = (item) => {
+    const reportId = item?.id?.toString().replace('api-', '');
+    if (!reportId) return;
+
+    setExpandedReplyId(prev => (prev === reportId ? null : reportId));
+    if (expandedReplyId !== reportId && !commentsByReport[reportId]) {
+      loadCommentsForReport(reportId);
+    }
+  };
+
+  const handleSubmitComment = async (item) => {
+    const reportId = item?.id?.toString().replace('api-', '');
+    if (!reportId) return;
+    const draft = (commentDrafts[reportId] || '').trim();
+    if (!draft) return;
+    if (commentSubmittingIds.has(reportId)) return;
+
+    setCommentSubmittingIds(prev => new Set(prev).add(reportId));
+    try {
+      const newComment = await commentsAPI.addComment(reportId, draft);
+      setCommentsByReport(prev => {
+        const existing = prev[reportId] || [];
+        return {
+          ...prev,
+          [reportId]: [newComment, ...existing],
+        };
+      });
+      setCommentDrafts(prev => ({ ...prev, [reportId]: '' }));
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      Alert.alert('Error', 'Failed to add comment.');
+    } finally {
+      setCommentSubmittingIds(prev => {
+        const next = new Set(prev);
+        next.delete(reportId);
+        return next;
+      });
+    }
+  };
+
+  const renderTrendingSection = () => {
+    const trendingItems = feedData.filter(item => item.isTrending);
+    const fallbackItems = trendingItems.length > 0 ? trendingItems : feedData.slice(0, 4);
+
+    if (fallbackItems.length === 0) {
+      return null;
+    }
+
+    return (
+      <View style={styles.trendingSection}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>TRENDING NOW</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAllText}>See All</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.trendingList}>
+          {fallbackItems.map(item => (
             <TouchableOpacity
               key={item.id}
               style={styles.trendingCard}
               onPress={() => handleReportPress(item)}>
-              {item.media && (
-                <Image source={{ uri: item.media }} style={styles.trendingImage} />
-              )}
+              <Image
+                source={{ uri: item.media || PLACEHOLDER_IMAGE }}
+                style={styles.trendingImage}
+                defaultSource={{ uri: PLACEHOLDER_IMAGE }}
+              />
               <View style={styles.trendingOverlay}>
                 <View style={styles.trendingBadge}>
                   <Icon name="fire" size={16} color={colors.white} />
@@ -399,12 +399,16 @@ export default function NewsFeedScreen({ navigation }) {
               </View>
             </TouchableOpacity>
           ))}
-      </ScrollView>
-    </View>
-  );
+        </ScrollView>
+      </View>
+    );
+  };
 
   const renderFeedItem = ({ item }) => {
     const isOwner = isUserReport(item);
+    const reportId = item?.id?.toString().replace('api-', '');
+    const isReplyOpen = expandedReplyId === reportId;
+    const reportComments = commentsByReport[reportId] || [];
 
     return (
       <TouchableOpacity
@@ -516,7 +520,7 @@ export default function NewsFeedScreen({ navigation }) {
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleDeleteReport(item)}>
-              <Icon name="dots-horizontal" size={20} color={colors.neutralMedium} />
+              <Icon name="trash-can-outline" size={20} color={colors.neutralMedium} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.actionButton}>
@@ -532,11 +536,57 @@ export default function NewsFeedScreen({ navigation }) {
             <Text style={styles.commentCount}>{item.commentsCount || 0}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.replyButton}>
+          <TouchableOpacity
+            style={styles.replyButton}
+            onPress={() => handleToggleReply(item)}
+          >
             <Icon name="reply" size={18} color={colors.neutralMedium} />
             <Text style={styles.replyText}>Reply</Text>
           </TouchableOpacity>
         </View>
+
+        {isReplyOpen && (
+          <View style={styles.replyPanel}>
+            <View style={styles.replyHeader}>
+              <Text style={styles.replyHeaderText}>Comments</Text>
+              {commentLoadingIds.has(reportId) && (
+                <Text style={styles.replyHeaderHint}>Loading…</Text>
+              )}
+            </View>
+            <ScrollView style={styles.replyList} nestedScrollEnabled>
+              {reportComments.length === 0 && !commentLoadingIds.has(reportId) ? (
+                <Text style={styles.replyEmpty}>No comments yet.</Text>
+              ) : (
+                reportComments.map(comment => (
+                  <View key={comment.id} style={styles.replyItem}>
+                    <Text style={styles.replyAuthor}>
+                      {comment.user?.name || 'Anonymous'}
+                    </Text>
+                    <Text style={styles.replyBody}>{comment.content}</Text>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+            <View style={styles.replyComposer}>
+              <TextInput
+                style={styles.replyInput}
+                placeholder="Write a comment..."
+                placeholderTextColor={colors.neutralMedium}
+                value={commentDrafts[reportId] || ''}
+                onChangeText={(text) =>
+                  setCommentDrafts(prev => ({ ...prev, [reportId]: text }))
+                }
+              />
+              <TouchableOpacity
+                style={styles.replySend}
+                onPress={() => handleSubmitComment(item)}
+                disabled={commentSubmittingIds.has(reportId)}
+              >
+                <Icon name="send" size={18} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {item.credibility === 'low' && (
           <View style={styles.credibilityWarning}>
@@ -562,6 +612,9 @@ export default function NewsFeedScreen({ navigation }) {
 
     return matchesCategory && matchesSearch;
   });
+
+  const visibleData = filteredData.slice(0, visibleCount);
+  const canLoadMore = visibleCount < filteredData.length;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -592,9 +645,15 @@ export default function NewsFeedScreen({ navigation }) {
         ) : (
           <>
             <Text style={styles.headerTitle}>News Feed</Text>
-            <TouchableOpacity style={styles.searchButton} onPress={() => setShowSearch(true)}>
-              <Icon name="magnify" size={24} color={colors.neutralDark} />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.searchButton}
+                onPress={() => setShowSearch(true)}
+              >
+                <Icon name="magnify" size={24} color={colors.neutralDark} />
+              </TouchableOpacity>
+              <HeaderNotificationsButton navigation={navigation} />
+            </View>
           </>
         )}
       </View>
@@ -633,7 +692,7 @@ export default function NewsFeedScreen({ navigation }) {
       </View>
 
       <FlatList
-        data={filteredData}
+        data={visibleData}
         renderItem={renderFeedItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.feedList}
@@ -657,10 +716,15 @@ export default function NewsFeedScreen({ navigation }) {
           </View>
         }
         ListFooterComponent={
-          <TouchableOpacity style={styles.loadMoreButton}>
-            <Text style={styles.loadMoreText}>Load More</Text>
-            <Icon name="chevron-down" size={20} color={colors.primary} />
-          </TouchableOpacity>
+          canLoadMore ? (
+            <TouchableOpacity
+              style={styles.loadMoreButton}
+              onPress={() => setVisibleCount((count) => count + 5)}
+            >
+              <Text style={styles.loadMoreText}>Load More</Text>
+              <Icon name="chevron-down" size={20} color={colors.primary} />
+            </TouchableOpacity>
+          ) : null
         }
       />
     </SafeAreaView>
@@ -687,6 +751,30 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     padding: 5,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  notificationButton: {
+    position: 'relative',
+    marginLeft: 12,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: colors.secondary,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationBadgeText: {
+    ...typography.small,
+    color: colors.white,
+    fontSize: 10,
   },
   searchInputContainer: {
     flex: 1,
@@ -983,6 +1071,67 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     marginLeft: 4,
+  },
+  replyPanel: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutralLight,
+    paddingTop: 12,
+  },
+  replyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  replyHeaderText: {
+    ...typography.caption,
+    color: colors.neutralDark,
+    fontWeight: '600',
+  },
+  replyHeaderHint: {
+    ...typography.small,
+    color: colors.neutralMedium,
+  },
+  replyList: {
+    maxHeight: 160,
+    marginBottom: 10,
+  },
+  replyEmpty: {
+    ...typography.small,
+    color: colors.neutralMedium,
+  },
+  replyItem: {
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutralLight,
+  },
+  replyAuthor: {
+    ...typography.small,
+    color: colors.neutralDark,
+    fontWeight: '600',
+  },
+  replyBody: {
+    ...typography.small,
+    color: colors.neutralMedium,
+    marginTop: 2,
+  },
+  replyComposer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutralLight,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  replyInput: {
+    flex: 1,
+    color: colors.neutralDark,
+    fontSize: 13,
+    paddingVertical: 0,
+  },
+  replySend: {
+    marginLeft: 8,
   },
   ownerBadge: {
     position: 'absolute',

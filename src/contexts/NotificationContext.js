@@ -1,18 +1,27 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import echo, { setEchoAuthToken } from '../config/echo';
 import { notificationsAPI } from '../services/api/notifications';
 import { useAuth } from '../hooks/useAuth';
 
 export const NotificationContext = createContext();
 
+let connectionDebugBound = false;
+
 export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [realtimeStatus, setRealtimeStatus] = useState('disconnected');
+    const notificationsInFlight = useRef(false);
+    const unreadInFlight = useRef(false);
+    const lastNotificationsFetchAt = useRef(0);
+    const lastUnreadFetchAt = useRef(0);
     const { user, token } = useAuth();
 
     useEffect(() => {
         if (token) {
+            ensureDeviceRegistered();
             initializeEcho();
             loadNotifications();
         }
@@ -24,7 +33,27 @@ export const NotificationProvider = ({ children }) => {
                 echo.leave('incidents');
             }
         };
-    }, [token, user]);
+    }, [token, user?.id]);
+
+    const ensureDeviceRegistered = async () => {
+        try {
+            if (!token) return;
+            let deviceUuid = await AsyncStorage.getItem('device_uuid');
+            if (!deviceUuid) {
+                deviceUuid = `device-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+                await AsyncStorage.setItem('device_uuid', deviceUuid);
+            }
+
+            await notificationsAPI.registerDevice({
+                device_uuid: deviceUuid,
+                device_type: Platform.OS,
+                device_name: Platform.OS === 'android' ? 'Android' : 'iOS',
+                os_version: String(Platform.Version || ''),
+            });
+        } catch (error) {
+            console.error('Device registration error:', error);
+        }
+    };
 
     const initializeEcho = () => {
         if (!token || !user) return;
@@ -32,17 +61,44 @@ export const NotificationProvider = ({ children }) => {
         // Set authentication token
         setEchoAuthToken(token);
 
+        if (!connectionDebugBound && echo.connector?.pusher?.connection) {
+            connectionDebugBound = true;
+            const connection = echo.connector.pusher.connection;
+            connection.bind('connecting', () => {
+                setRealtimeStatus('connecting');
+            });
+            connection.bind('connected', () => {
+                setRealtimeStatus('connected');
+            });
+            connection.bind('disconnected', () => {
+                setRealtimeStatus('disconnected');
+            });
+            connection.bind('error', (err) => {
+                setRealtimeStatus('error');
+            });
+        }
+
         // Listen to user's private channel
-        echo
+        const userChannel = echo
             .private(`user.${user.id}`)
             .notification((notification) => {
-                console.log('New notification received:', notification);
                 addNotification(notification);
+            })
+            .listen('.NotificationCreated', (event) => {
+                if (event?.notification) {
+                    addNotification(event.notification);
+                    refreshUnreadCount();
+                }
             });
+        userChannel.subscribed(() => {
+            setRealtimeStatus('subscribed');
+        });
+        userChannel.error(() => {
+            setRealtimeStatus('auth_error');
+        });
 
         // Listen to public incidents channel
         echo.channel('incidents').listen('IncidentReported', (event) => {
-            console.log('New incident reported:', event);
             handleNewIncident(event);
         });
 
@@ -51,26 +107,55 @@ export const NotificationProvider = ({ children }) => {
             const gridX = Math.floor(user.latitude * 100);
             const gridY = Math.floor(user.longitude * 100);
             echo.channel(`location.${gridX}.${gridY}`).listen('NearbyIncident', (event) => {
-                console.log('Nearby incident:', event);
                 handleNearbyIncident(event);
             });
         }
     };
 
-    const loadNotifications = async () => {
+    const refreshUnreadCount = async () => {
         try {
-            const response = await notificationsAPI.getNotifications();
+            const now = Date.now();
+            if (unreadInFlight.current || now - lastUnreadFetchAt.current < 1000) {
+                return;
+            }
+            unreadInFlight.current = true;
             const unreadResponse = await notificationsAPI.getUnreadCount();
-            setNotifications(response.data.notifications || response.data.data || []);
             setUnreadCount(unreadResponse.data.unread_count || 0);
         } catch (error) {
+            console.error('Error loading unread count:', error);
+        } finally {
+            lastUnreadFetchAt.current = Date.now();
+            unreadInFlight.current = false;
+        }
+    };
+
+    const loadNotifications = async () => {
+        try {
+            const now = Date.now();
+            if (notificationsInFlight.current || now - lastNotificationsFetchAt.current < 1500) {
+                return;
+            }
+            notificationsInFlight.current = true;
+            const response = await notificationsAPI.getNotifications();
+            setNotifications(response.data.notifications || response.data.data || []);
+            await refreshUnreadCount();
+        } catch (error) {
             console.error('Error loading notifications:', error);
+        } finally {
+            lastNotificationsFetchAt.current = Date.now();
+            notificationsInFlight.current = false;
         }
     };
 
     const addNotification = (notification) => {
-        setNotifications((prev) => [notification, ...prev]);
-        setUnreadCount((prev) => prev + 1);
+        setNotifications((prev) => {
+            const exists = notification?.id && prev.some((item) => item.id === notification.id);
+            if (!exists) {
+                setUnreadCount((prevCount) => prevCount + 1);
+                return [notification, ...prev];
+            }
+            return prev;
+        });
     };
 
     const handleNewIncident = (event) => {
@@ -136,7 +221,9 @@ export const NotificationProvider = ({ children }) => {
     const value = {
         notifications,
         unreadCount,
+        realtimeStatus,
         loadNotifications,
+        refreshUnreadCount,
         markAsRead,
         markAllAsRead,
         subscribeToChannel,

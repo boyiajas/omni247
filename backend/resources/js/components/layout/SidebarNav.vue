@@ -36,6 +36,7 @@ const route = useRoute();
 
 const navItems = [
     { label: 'Dashboard', to: '/', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 13h8V3H3zm10 8h8V3h-8zm-10 0h8v-6H3z"/></svg>' },
+    { label: 'Analytics', to: '/analytics', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 19h16v2H4zm2-2V9h3v8zm5 0V5h3v12zm5 0v-6h3v6z"/></svg>' },
     { label: 'Reports', to: '/reports', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M5 5v14l7-3l7 3V5H5z"/></svg>' },
     { label: 'Users', to: '/users', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5a5 5 0 0 0 5 5m-7 8v-1a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v1Z"/></svg>' },
     { label: 'Roles', to: '/roles', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="m17 3l-1.8 3H8.8L7 3H2l5 9l-5 9h5l1.8-3h6.4L17 21h5l-5-9l5-9z"/></svg>' },

@@ -8,19 +8,15 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { colors, typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
+import { rewardsAPI } from '../../services/api/rewards';
 
-const badges = [
-  { id: '1', name: 'First Report', icon: 'star', color: '#FFD700', earned: true },
-  { id: '2', name: 'Verified Reporter', icon: 'check-decagram', color: '#059669', earned: true },
-  { id: '3', name: 'Top Contributor', icon: 'trophy', color: '#DC2626', earned: true },
-  { id: '4', name: 'Gold Tier', icon: 'medal', color: '#D4AF37', earned: false },
-  { id: '5', name: 'Emergency Responder', icon: 'ambulance', color: '#2563EB', earned: false },
-  { id: '6', name: 'Community Leader', icon: 'account-group', color: '#7C3AED', earned: true },
-];
+
 
 const rewards = [
   { id: '1', name: 'Premium Features', points: 500, description: 'Ad-free experience for 30 days', icon: 'crown' },
@@ -29,17 +25,18 @@ const rewards = [
   { id: '4', name: 'API Access', points: 2000, description: 'Access to advanced API features', icon: 'api' },
 ];
 
-const activities = [
-  { id: '1', action: 'High-rated report', points: '+50', time: 'Yesterday', icon: 'thumb-up' },
-  { id: '2', action: 'Verified information', points: '+25', time: '2 days ago', icon: 'check-circle' },
-  { id: '3', action: 'First to report', points: '+10', time: '1 week ago', icon: 'flash' },
-  { id: '4', action: 'Helpful comment', points: '+5', time: '2 weeks ago', icon: 'message-text' },
-];
+
 
 export default function RewardsScreen({ navigation }) {
-  const [userPoints, setUserPoints] = useState(1250);
-  const [userTier, setUserTier] = useState('Gold');
-  const [progress, setProgress] = useState(75); // Percentage to next tier
+  const [userPoints, setUserPoints] = useState(0);
+  const [activities, setActivities] = useState([]);
+  const [badges, setBadges] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [userTier, setUserTier] = useState('Bronze');
+  const [progress, setProgress] = useState(0);
+  const [displayCount, setDisplayCount] = useState(5);
 
   const tiers = [
     { name: 'Bronze', min: 0, max: 500, color: '#CD7F32' },
@@ -49,8 +46,51 @@ export default function RewardsScreen({ navigation }) {
     { name: 'Diamond', min: 5001, max: 10000, color: '#B9F2FF' },
   ];
 
-  const currentTier = tiers.find(t => userPoints >= t.min && userPoints <= t.max);
+  const currentTier = tiers.find(t => userPoints >= t.min && userPoints <= t.max) || tiers[0];
   const nextTier = tiers[tiers.indexOf(currentTier) + 1];
+
+  const loadRewards = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      // Fetch both rewards and achievements concurrently
+      const [rewardsResponse, achievementsResponse] = await Promise.all([
+        rewardsAPI.getUserRewardsAndActivities(),
+        rewardsAPI.getUserAchievements(),
+      ]);
+
+      const rewardsData = rewardsResponse.data;
+      const achievementsData = achievementsResponse.data;
+
+      setUserPoints(rewardsData.total_points || 0);
+      setActivities(rewardsData.activities || []);
+      setBadges(achievementsData.achievements || []);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to load rewards:', err);
+      setError('Failed to load rewards data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRewards();
+  }, []);
+
+  const onRefresh = () => {
+    setDisplayCount(5);
+    loadRewards(true);
+  };
+
+  const handleShowMore = () => {
+    setDisplayCount(prev => prev + 5);
+  };
 
   const calculateProgress = () => {
     if (!nextTier) return 100;
@@ -65,16 +105,16 @@ export default function RewardsScreen({ navigation }) {
         styles.badgeIconContainer,
         { backgroundColor: item.earned ? `${item.color}20` : colors.neutralLight }
       ]}>
-        <Icon 
-          name={item.icon} 
-          size={30} 
-          color={item.earned ? item.color : colors.neutralMedium} 
+        <Icon
+          name={item.icon}
+          size={24}
+          color={item.earned ? item.color : colors.neutralMedium}
         />
         {!item.earned && (
-          <Icon 
-            name="lock" 
-            size={12} 
-            color={colors.neutralMedium} 
+          <Icon
+            name="lock"
+            size={10}
+            color={colors.neutralMedium}
             style={styles.lockIcon}
           />
         )}
@@ -97,7 +137,7 @@ export default function RewardsScreen({ navigation }) {
       <View style={styles.rewardInfo}>
         <Text style={styles.rewardName}>{item.name}</Text>
         <Text style={styles.rewardDescription}>{item.description}</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
             styles.redeemButton,
             { opacity: userPoints >= item.points ? 1 : 0.5 }
@@ -111,18 +151,28 @@ export default function RewardsScreen({ navigation }) {
     </TouchableOpacity>
   );
 
-  const renderActivity = ({ item }) => (
-    <View style={styles.activityItem}>
-      <View style={styles.activityIcon}>
-        <Icon name={item.icon} size={20} color={colors.accent} />
+  const renderActivity = ({ item }) => {
+    // Determine icon based on action text
+    let icon = 'star';
+    const action = item.action.toLowerCase();
+    if (action.includes('report')) icon = 'file-document';
+    else if (action.includes('verified')) icon = 'check-circle';
+    else if (action.includes('comment')) icon = 'message-text';
+    else if (action.includes('first')) icon = 'flash';
+
+    return (
+      <View style={styles.activityItem}>
+        <View style={styles.activityIcon}>
+          <Icon name={icon} size={20} color={colors.accent} />
+        </View>
+        <View style={styles.activityInfo}>
+          <Text style={styles.activityAction}>{item.action}</Text>
+          <Text style={styles.activityTime}>{item.time}</Text>
+        </View>
+        <Text style={styles.activityPoints}>{item.points}</Text>
       </View>
-      <View style={styles.activityInfo}>
-        <Text style={styles.activityAction}>{item.action}</Text>
-        <Text style={styles.activityTime}>{item.time}</Text>
-      </View>
-      <Text style={styles.activityPoints}>{item.points}</Text>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -136,80 +186,115 @@ export default function RewardsScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Tier Progress */}
-        <LinearGradient
-          colors={[`${currentTier?.color}20`, `${currentTier?.color}10`]}
-          style={styles.tierCard}>
-          <View style={styles.tierHeader}>
-            <Icon name="medal" size={30} color={currentTier?.color} />
-            <View>
-              <Text style={styles.tierName}>{currentTier?.name} Tier Reporter</Text>
-              <Text style={styles.tierPoints}>{userPoints} Points</Text>
-            </View>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
+      >
+        {loading && !refreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Loading rewards...</Text>
           </View>
-
-          {nextTier && (
-            <>
-              <View style={styles.progressContainer}>
-                <View style={styles.progressLabels}>
-                  <Text style={styles.progressText}>
-                    {userPoints - currentTier.min} / {nextTier.max - currentTier.min}
-                  </Text>
-                  <Text style={styles.progressText}>
-                    {calculateProgress().toFixed(0)}% to {nextTier.name}
-                  </Text>
-                </View>
-                <View style={styles.progressBar}>
-                  <View 
-                    style={[
-                      styles.progressFill,
-                      { 
-                        width: `${calculateProgress()}%`,
-                        backgroundColor: currentTier?.color,
-                      }
-                    ]} 
-                  />
+        ) : (
+          <>
+            {/* Tier Progress */}
+            <LinearGradient
+              colors={[`${currentTier?.color}20`, `${currentTier?.color}10`]}
+              style={styles.tierCard}>
+              <View style={styles.tierHeader}>
+                <Icon name="medal" size={30} color={currentTier?.color} />
+                <View>
+                  <Text style={styles.tierName}>{currentTier?.name} Tier Reporter</Text>
+                  <Text style={styles.tierPoints}>{userPoints} Points</Text>
                 </View>
               </View>
-            </>
-          )}
-        </LinearGradient>
 
-        {/* Badges Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Badges</Text>
-          <FlatList
-            data={badges}
-            renderItem={renderBadge}
-            keyExtractor={item => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.badgesList}
-          />
-        </View>
+              {nextTier && (
+                <>
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressLabels}>
+                      <Text style={styles.progressText}>
+                        {userPoints - currentTier.min} / {nextTier.max - currentTier.min}
+                      </Text>
+                      <Text style={styles.progressText}>
+                        {calculateProgress().toFixed(0)}% to {nextTier.name}
+                      </Text>
+                    </View>
+                    <View style={styles.progressBar}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          {
+                            width: `${calculateProgress()}%`,
+                            backgroundColor: currentTier?.color,
+                          }
+                        ]}
+                      />
+                    </View>
+                  </View>
+                </>
+              )}
+            </LinearGradient>
 
-        {/* Available Rewards */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Available Rewards</Text>
-          <FlatList
-            data={rewards}
-            renderItem={renderReward}
-            keyExtractor={item => item.id}
-            scrollEnabled={false}
-          />
-        </View>
+            {/* Badges Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Badges</Text>
+              <FlatList
+                data={badges}
+                renderItem={renderBadge}
+                keyExtractor={item => item.id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.badgesList}
+              />
+            </View>
 
-        {/* Recent Activity */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <FlatList
-            data={activities}
-            renderItem={renderActivity}
-            keyExtractor={item => item.id}
-            scrollEnabled={false}
-          />
-        </View>
+            {/* Available Rewards */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Available Rewards</Text>
+              <FlatList
+                data={rewards}
+                renderItem={renderReward}
+                keyExtractor={item => item.id}
+                scrollEnabled={false}
+              />
+            </View>
+
+            {/* Recent Activity */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Recent Activity</Text>
+              {activities.length === 0 ? (
+                <View style={styles.emptyStateContainer}>
+                  <Icon name="history" size={40} color={colors.neutralMedium} />
+                  <Text style={styles.emptyStateText}>No recent activity</Text>
+                  <Text style={styles.emptyStateCaption}>
+                    Complete reports and engage with the community to earn points
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <FlatList
+                    data={activities.slice(0, displayCount)}
+                    renderItem={renderActivity}
+                    keyExtractor={item => item.id.toString()}
+                    scrollEnabled={false}
+                  />
+                  {displayCount < activities.length && (
+                    <TouchableOpacity
+                      style={styles.showMoreButton}
+                      onPress={handleShowMore}
+                    >
+                      <Text style={styles.showMoreText}>Show More</Text>
+                      <Icon name="chevron-down" size={20} color={colors.primary} />
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -225,7 +310,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingVertical: 10,
+    paddingTop: 18,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutralLight,
   },
@@ -234,18 +320,18 @@ const styles = StyleSheet.create({
     color: colors.neutralDark,
   },
   content: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: 14,
+    paddingBottom: 28,
   },
   tierCard: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 18,
   },
   tierHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 14,
   },
   tierName: {
     ...typography.h3,
@@ -280,25 +366,25 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   section: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   sectionTitle: {
     ...typography.h3,
     color: colors.neutralDark,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   badgesList: {
     paddingRight: 20,
   },
   badgeItem: {
     alignItems: 'center',
-    marginRight: 20,
-    width: 80,
+    marginRight: 14,
+    width: 70,
   },
   badgeIconContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -323,18 +409,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: colors.white,
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 12,
+    padding: 12,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: colors.neutralLight,
   },
   rewardGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
+    width: 68,
+    height: 68,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    marginRight: 12,
   },
   rewardPoints: {
     ...typography.caption,
@@ -372,18 +458,18 @@ const styles = StyleSheet.create({
   activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutralLight,
   },
   activityIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: `${colors.accent}20`,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   activityInfo: {
     flex: 1,
@@ -401,5 +487,48 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.accent,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 16,
+    color: colors.neutralMedium,
+    ...typography.body,
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyStateText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.neutralDark,
+  },
+  emptyStateCaption: {
+    marginTop: 8,
+    textAlign: 'center',
+    color: colors.neutralMedium,
+    ...typography.caption,
+  },
+  showMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutralLight,
+  },
+  showMoreText: {
+    color: colors.primary,
+    fontWeight: '600',
+    marginRight: 4,
+    ...typography.body,
   },
 });

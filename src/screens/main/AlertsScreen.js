@@ -4,9 +4,7 @@ import {
   Text,
   StyleSheet,
   SafeAreaView,
-  ScrollView,
   TouchableOpacity,
-  Switch,
   RefreshControl,
   SectionList,
 } from 'react-native';
@@ -145,14 +143,6 @@ const alertTypeColors = {
 export default function AlertsScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [alertsData, setAlertsData] = useState(mockAlertsData);
-  const [notificationSettings, setNotificationSettings] = useState({
-    emergencyAlerts: true,
-    crimeReports: true,
-    disasterAlerts: true,
-    celebrations: true,
-    politicalEvents: true,
-    allNotifications: true,
-  });
 
   useEffect(() => {
     fetchAlerts();
@@ -183,25 +173,6 @@ export default function AlertsScreen({ navigation }) {
       navigation.navigate('EmergencyAlert', { alertId: alert.id });
     } else {
       navigation.navigate('ReportDetail', { reportId: alert.id });
-    }
-  };
-
-  const handleSettingsChange = (setting) => {
-    if (setting === 'allNotifications') {
-      const newValue = !notificationSettings.allNotifications;
-      setNotificationSettings({
-        emergencyAlerts: newValue,
-        crimeReports: newValue,
-        disasterAlerts: newValue,
-        celebrations: newValue,
-        politicalEvents: newValue,
-        allNotifications: newValue,
-      });
-    } else {
-      setNotificationSettings(prev => ({
-        ...prev,
-        [setting]: !prev[setting],
-      }));
     }
   };
 
@@ -320,69 +291,6 @@ export default function AlertsScreen({ navigation }) {
         </View>
       </View>
 
-      <View style={styles.settingsCard}>
-        <Text style={styles.settingsTitle}>Notification Settings</Text>
-        
-        <View style={styles.settingItem}>
-          <View style={styles.settingInfo}>
-            <Icon name="bell-ring" size={20} color={colors.neutralDark} />
-            <Text style={styles.settingLabel}>All Notifications</Text>
-          </View>
-          <Switch
-            value={notificationSettings.allNotifications}
-            onValueChange={() => handleSettingsChange('allNotifications')}
-            trackColor={{ false: colors.neutralLight, true: colors.primary }}
-            thumbColor={colors.white}
-          />
-        </View>
-
-        <View style={styles.settingsGrid}>
-          <View style={styles.settingToggle}>
-            <Text style={styles.settingToggleLabel}>Emergency Alerts</Text>
-            <Switch
-              value={notificationSettings.emergencyAlerts}
-              onValueChange={() => handleSettingsChange('emergencyAlerts')}
-              trackColor={{ false: colors.neutralLight, true: colors.secondary }}
-              thumbColor={colors.white}
-              disabled={!notificationSettings.allNotifications}
-            />
-          </View>
-          
-          <View style={styles.settingToggle}>
-            <Text style={styles.settingToggleLabel}>Crime Reports</Text>
-            <Switch
-              value={notificationSettings.crimeReports}
-              onValueChange={() => handleSettingsChange('crimeReports')}
-              trackColor={{ false: colors.neutralLight, true: colors.secondary }}
-              thumbColor={colors.white}
-              disabled={!notificationSettings.allNotifications}
-            />
-          </View>
-          
-          <View style={styles.settingToggle}>
-            <Text style={styles.settingToggleLabel}>Disaster Alerts</Text>
-            <Switch
-              value={notificationSettings.disasterAlerts}
-              onValueChange={() => handleSettingsChange('disasterAlerts')}
-              trackColor={{ false: colors.neutralLight, true: colors.warning }}
-              thumbColor={colors.white}
-              disabled={!notificationSettings.allNotifications}
-            />
-          </View>
-          
-          <View style={styles.settingToggle}>
-            <Text style={styles.settingToggleLabel}>Celebrations</Text>
-            <Switch
-              value={notificationSettings.celebrations}
-              onValueChange={() => handleSettingsChange('celebrations')}
-              trackColor={{ false: colors.neutralLight, true: colors.accent }}
-              thumbColor={colors.white}
-              disabled={!notificationSettings.allNotifications}
-            />
-          </View>
-        </View>
-      </View>
-
       <SectionList
         sections={alertsData}
         renderItem={renderAlertItem}
@@ -424,6 +332,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
+    paddingTop: 21,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutralLight,
   },
@@ -445,53 +354,9 @@ const styles = StyleSheet.create({
     color: colors.neutralDark,
     marginLeft: 5,
   },
-  settingsCard: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    margin: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: colors.neutralLight,
-  },
-  settingsTitle: {
-    ...typography.h3,
-    color: colors.neutralDark,
-    marginBottom: 20,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  settingInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  settingLabel: {
-    ...typography.body,
-    color: colors.neutralDark,
-    marginLeft: 12,
-    fontWeight: '500',
-  },
-  settingsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -5,
-  },
-  settingToggle: {
-    width: '50%',
-    paddingHorizontal: 5,
-    marginBottom: 15,
-  },
-  settingToggleLabel: {
-    ...typography.caption,
-    color: colors.neutralDark,
-    marginBottom: 8,
-  },
   alertsList: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -500,8 +365,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    ...typography.h3,
+    ...typography.body,
     color: colors.neutralDark,
+    fontWeight: '600',
   },
   unreadCountBadge: {
     backgroundColor: colors.secondary,
@@ -519,8 +385,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: colors.white,
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 10,
+    padding: 10,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: colors.neutralLight,
   },

@@ -67,6 +67,25 @@
         </div>
 
         <div class="panel">
+            <h3>Achievements ({{ user.achievements?.length || 0 }})</h3>
+            <div class="achievements-grid">
+                <div v-for="achievement in user.achievements" :key="achievement.id" class="achievement-card">
+                    <div class="achievement-icon" :style="{ background: achievement.color }">
+                        <svg viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="white" :d="getIconPath(achievement.icon)" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="achievement-name">{{ achievement.name }}</p>
+                        <p class="achievement-desc">{{ achievement.description }}</p>
+                        <p class="achievement-date">Earned {{ formatDate(achievement.pivot.earned_at) }}</p>
+                    </div>
+                </div>
+                <p v-if="!user.achievements?.length" class="muted">No achievements earned yet.</p>
+            </div>
+        </div>
+
+        <div class="panel">
             <h3>Devices</h3>
             <ul class="list">
                 <li v-for="device in user.devices" :key="device.id">
@@ -97,6 +116,15 @@
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/services/api';
+
+const ICON_PATHS = {
+    'trophy': 'M20 2H4v2l2 2v1c0 2 2 4 4 4v2l-3 5h10l-3-5v-2c2 0 4-2 4-4V6l2-2z',
+    'medal': 'M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7m0 2a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5m-1 14v2h2v-2zm0 3v2a1 1 0 0 0 1 1a1 1 0 0 0 1-1v-2z',
+    'star': 'm12 1l3 7l7 1l-5 5l1 7l-6-3l-6 3l1-7l-5-5l7-1z',
+    'check-decagram': 'M12 2l2 4l4 1l-3 3l1 4l-4-2l-4 2l1-4l-3-3l4-1z',
+    'ambulance': 'M5 12h7l5 3v5H3v-7l2-1zm10-2V5h-3V2h-4v3H5v5zm-3 7a2 2 0 1 0 2 2a2 2 0 0 0-2-2zm-6 0a2 2 0 1 0 2 2a2 2 0 0 0-2-2z',
+    'account-group': 'M12 5a3 3 0 1 0 3 3a3 3 0 0 0-3-3m4 8a3 3 0 1 0 3 3a3 3 0 0 0-3-3M2 16v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2zm14 0v-2a4 4 0 0 1 4-4h2v6z',
+};
 
 const route = useRoute();
 const router = useRouter();
@@ -154,6 +182,18 @@ const goBack = () => {
 
 const goToReport = (id) => {
     router.push({ name: 'report-detail', params: { id } });
+};
+
+const getIconPath = (icon) => {
+    return ICON_PATHS[icon] || ICON_PATHS['trophy'];
+};
+
+const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
 };
 
 onMounted(() => {
@@ -285,6 +325,49 @@ button[type='submit'] {
     font-size: 20px;
     font-weight: 600;
     margin: 0;
+}
+
+.achievements-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.achievement-card {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.achievement-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.achievement-name {
+    margin: 0;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.achievement-desc {
+    margin: 2px 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.achievement-date {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #94a3b8;
 }
 
 .list {

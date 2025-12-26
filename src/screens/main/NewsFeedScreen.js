@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,8 @@ import { favoritesAPI } from '../../services/api/favorites';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import useCategories from '../../hooks/useCategories';
+import { useLocation } from '../../hooks/useLocation';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Placeholder image for reports without media
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&q=80';
@@ -121,13 +123,17 @@ const transformApiReport = (report) => {
     description: report.description || '',
     category: categorySlugToName[report.category_id] || 'other',
     location: report.address || report.location_address || 'Unknown location',
-    distance: 'Nearby',
+    latitude: report.latitude ? Number(report.latitude) : null,
+    longitude: report.longitude ? Number(report.longitude) : null,
+    distanceBadge: null,
+    distanceValue: null,
+    allowComments: report.allow_comments !== false,
     rating: parseFloat(report.average_rating) || 0,
     reportsCount: report.views_count || 1,
     commentsCount: report.comments_count || 0, // From withCount('comments')
     timeAgo: formatTimeAgo(report.created_at),
     user: {
-      name: report.is_anonymous ? null : (report.user?.name || 'User'),
+      name: report.is_anonymous || report.privacy === 'anonymous' ? null : (report.user?.name || 'User'),
       isVerified: report.user?.is_verified || false,
       avatar: report.user?.avatar_url || null,
     },
@@ -153,7 +159,14 @@ export default function NewsFeedScreen({ navigation }) {
   const [commentDrafts, setCommentDrafts] = useState({});
   const [commentLoadingIds, setCommentLoadingIds] = useState(new Set());
   const [commentSubmittingIds, setCommentSubmittingIds] = useState(new Set());
+  const [distanceRange, setDistanceRange] = useState(null);
+  const [showDistanceSheet, setShowDistanceSheet] = useState(false);
   const { categories: fetchedCategories } = useCategories();
+  const { location } = useLocation();
+
+  // Get user's current coordinates
+  const userLat = location?.latitude ?? user?.last_known_lat ?? null;
+  const userLon = location?.longitude ?? user?.last_known_lng ?? null;
 
   const categories = useMemo(
     () => [
@@ -167,6 +180,52 @@ export default function NewsFeedScreen({ navigation }) {
     [fetchedCategories]
   );
 
+  // Calculate distance and add to feed data
+  const feedDataWithDistance = useMemo(() => {
+    console.log('[DISTANCE] User location:', userLat, userLon);
+
+    if (!Number.isFinite(userLat) || !Number.isFinite(userLon)) {
+      console.log('[DISTANCE] No user location, returning original feedData');
+      return feedData;
+    }
+
+    // Haversine formula to calculate distance between two points on Earth
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371; // Radius of Earth in kilometers
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c; // Distance in km
+    };
+
+    const updatedData = feedData.map(item => {
+      const locationText = (item.location || '').toString().trim().toLowerCase();
+      const hasKnownLocation = locationText && locationText !== 'unknown location';
+      const hasValidCoords =
+        Number.isFinite(item.latitude)
+        && Number.isFinite(item.longitude)
+        && !(Number(item.latitude) === 0 && Number(item.longitude) === 0);
+      if (hasKnownLocation && hasValidCoords) {
+        const dist = calculateDistance(userLat, userLon, item.latitude, item.longitude);
+        console.log(`[DISTANCE] Report "${item.title}": ${dist.toFixed(1)} km`);
+        return {
+          ...item,
+          distanceBadge: `Nearby - ${dist.toFixed(1)} km`, // For green badge on image
+          distanceValue: `${dist.toFixed(1)} km`, // For footer text (no "Nearby")
+          distanceKm: dist,
+        };
+      }
+      return { ...item, distanceKm: null };
+    });
+
+    console.log('[DISTANCE] Updated data sample:', updatedData[0]?.distance);
+    return updatedData;
+  }, [feedData, userLat, userLon]);
+
   // Check if current user owns the report
   const isUserReport = (item) => {
     if (!user || !item.isFromApi) return false;
@@ -178,7 +237,25 @@ export default function NewsFeedScreen({ navigation }) {
   // Handle edit report
   const handleEditReport = (report) => {
     const reportId = report.id?.replace('api-', '');
-    navigation.navigate('EditReport', { reportId, report });
+    navigation.navigate('EditReport', {
+      reportId,
+      report,
+      onUpdated: (updatedReport) => {
+        if (!updatedReport) return;
+        const updatedId = `api-${updatedReport.id}`;
+        setFeedData((prev) =>
+          prev.map((item) => {
+            if (item.id === updatedId) {
+              return {
+                ...item,
+                ...transformApiReport(updatedReport),
+              };
+            }
+            return item;
+          })
+        );
+      },
+    });
   };
 
   // Handle delete report
@@ -257,6 +334,12 @@ export default function NewsFeedScreen({ navigation }) {
     fetchFeedData();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchFeedData();
+    }, [])
+  );
+
   const fetchFeedData = async () => {
     try {
       setLoading(true);
@@ -288,7 +371,13 @@ export default function NewsFeedScreen({ navigation }) {
 
   const handleReportPress = (report) => {
     const reportId = report?.id?.toString().replace('api-', '');
-    navigation.navigate('ReportDetail', { reportId });
+    navigation.navigate('ReportDetail', {
+      reportId,
+      onCommentAdded: () => {
+        if (!reportId) return;
+        incrementReportCommentsCount(reportId);
+      },
+    });
   };
 
   const loadCommentsForReport = async (reportId) => {
@@ -327,6 +416,10 @@ export default function NewsFeedScreen({ navigation }) {
   const handleSubmitComment = async (item) => {
     const reportId = item?.id?.toString().replace('api-', '');
     if (!reportId) return;
+    if (item?.allowComments === false) {
+      Alert.alert('Comments Disabled', 'Comments are disabled for this report.');
+      return;
+    }
     const draft = (commentDrafts[reportId] || '').trim();
     if (!draft) return;
     if (commentSubmittingIds.has(reportId)) return;
@@ -342,6 +435,7 @@ export default function NewsFeedScreen({ navigation }) {
         };
       });
       setCommentDrafts(prev => ({ ...prev, [reportId]: '' }));
+      incrementReportCommentsCount(reportId);
     } catch (error) {
       console.error('Error adding comment:', error);
       Alert.alert('Error', 'Failed to add comment.');
@@ -352,6 +446,19 @@ export default function NewsFeedScreen({ navigation }) {
         return next;
       });
     }
+  };
+
+  const incrementReportCommentsCount = (reportId) => {
+    setFeedData((prev) =>
+      prev.map((item) => {
+        const itemId = item?.id?.toString().replace('api-', '');
+        if (itemId === reportId) {
+          const nextCount = Number(item.commentsCount || 0) + 1;
+          return { ...item, commentsCount: nextCount };
+        }
+        return item;
+      })
+    );
   };
 
   const renderTrendingSection = () => {
@@ -366,9 +473,16 @@ export default function NewsFeedScreen({ navigation }) {
       <View style={styles.trendingSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>TRENDING NOW</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAllText}>See All</Text>
-          </TouchableOpacity>
+          <View style={styles.sectionActions}>
+            <TouchableOpacity onPress={() => setShowDistanceSheet(true)}>
+              <Text style={styles.distanceFilterText}>
+                Filter by Distance{distanceRange ? ` • ${distanceRange} km` : ''}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <ScrollView
           horizontal
@@ -394,7 +508,9 @@ export default function NewsFeedScreen({ navigation }) {
                 </Text>
                 <View style={styles.trendingMeta}>
                   <Icon name="map-marker" size={12} color={colors.white} />
-                  <Text style={styles.trendingLocation}>{item.distance}</Text>
+                  <Text style={styles.trendingLocation} numberOfLines={2} ellipsizeMode="tail">
+                    {item.location || 'Unknown location'}
+                  </Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -464,13 +580,22 @@ export default function NewsFeedScreen({ navigation }) {
               <Text style={styles.ownerBadgeText}>Your Report</Text>
             </View>
           )}
+          {/* Nearby distance badge - green badge on bottom-left */}
+          {item.distanceBadge ? (
+            <View style={styles.nearbyBadge}>
+              <Icon name="map-marker" size={14} color={colors.white} />
+              <Text style={styles.nearbyBadgeText}>
+                {item.distanceBadge}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.feedFooter}>
           <View style={styles.locationInfo}>
             <Icon name="map-marker" size={14} color={colors.neutralMedium} />
             <Text style={styles.locationText} numberOfLines={1}>{item.location || 'Unknown'}</Text>
-            <Text style={styles.distanceText}>• {item.distance}</Text>
+            {null}
           </View>
 
           <View style={styles.statsContainer}>
@@ -567,24 +692,31 @@ export default function NewsFeedScreen({ navigation }) {
                 ))
               )}
             </ScrollView>
-            <View style={styles.replyComposer}>
-              <TextInput
-                style={styles.replyInput}
-                placeholder="Write a comment..."
-                placeholderTextColor={colors.neutralMedium}
-                value={commentDrafts[reportId] || ''}
-                onChangeText={(text) =>
-                  setCommentDrafts(prev => ({ ...prev, [reportId]: text }))
-                }
-              />
-              <TouchableOpacity
-                style={styles.replySend}
-                onPress={() => handleSubmitComment(item)}
-                disabled={commentSubmittingIds.has(reportId)}
-              >
-                <Icon name="send" size={18} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
+            {item.allowComments !== false ? (
+              <View style={styles.replyComposer}>
+                <TextInput
+                  style={styles.replyInput}
+                  placeholder="Write a comment..."
+                  placeholderTextColor={colors.neutralMedium}
+                  value={commentDrafts[reportId] || ''}
+                  onChangeText={(text) =>
+                    setCommentDrafts(prev => ({ ...prev, [reportId]: text }))
+                  }
+                />
+                <TouchableOpacity
+                  style={styles.replySend}
+                  onPress={() => handleSubmitComment(item)}
+                  disabled={commentSubmittingIds.has(reportId)}
+                >
+                  <Icon name="send" size={18} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.replyDisabled}>
+                <Icon name="comment-off-outline" size={18} color={colors.neutralMedium} />
+                <Text style={styles.replyDisabledText}>Comments are disabled for this report</Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -598,8 +730,8 @@ export default function NewsFeedScreen({ navigation }) {
     );
   };
 
-  // Filter by category and search query
-  const filteredData = feedData.filter(item => {
+  // Filter by category, search query, and distance range (when available)
+  const filteredData = feedDataWithDistance.filter(item => {
     // Category filter
     const matchesCategory = !selectedCategory || item.category === selectedCategory;
 
@@ -610,11 +742,24 @@ export default function NewsFeedScreen({ navigation }) {
       item.description?.toLowerCase().includes(query) ||
       item.location?.toLowerCase().includes(query);
 
-    return matchesCategory && matchesSearch;
+    const matchesDistance = distanceRange === null
+      ? true
+      : item.distanceKm === null || item.distanceKm <= distanceRange;
+
+    return matchesCategory && matchesSearch && matchesDistance;
   });
 
-  const visibleData = filteredData.slice(0, visibleCount);
-  const canLoadMore = visibleCount < filteredData.length;
+  const distanceSortedData = distanceRange === null
+    ? filteredData
+    : [...filteredData].sort((a, b) => {
+      if (a.distanceKm === null && b.distanceKm === null) return 0;
+      if (a.distanceKm === null) return 1;
+      if (b.distanceKm === null) return -1;
+      return a.distanceKm - b.distanceKm;
+    });
+
+  const visibleData = distanceSortedData.slice(0, visibleCount);
+  const canLoadMore = visibleCount < distanceSortedData.length;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -727,6 +872,49 @@ export default function NewsFeedScreen({ navigation }) {
           ) : null
         }
       />
+
+      {showDistanceSheet && (
+        <View style={styles.distanceSheetOverlay}>
+          <TouchableOpacity
+            style={styles.distanceSheetBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowDistanceSheet(false)}
+          />
+          <View style={styles.distanceSheet}>
+            <View style={styles.distanceSheetHandle} />
+            <Text style={styles.distanceSheetTitle}>Filter by distance</Text>
+            {[
+              { label: 'All distances', value: null },
+              { label: 'Within 2 km', value: 2 },
+              { label: 'Within 5 km', value: 5 },
+              { label: 'Within 10 km', value: 10 },
+              { label: 'Within 25 km', value: 25 },
+              { label: 'Within 50 km', value: 50 },
+            ].map(option => (
+              <TouchableOpacity
+                key={String(option.value)}
+                style={styles.distanceSheetItem}
+                onPress={() => {
+                  setDistanceRange(option.value);
+                  setShowDistanceSheet(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.distanceSheetText,
+                    distanceRange === option.value && styles.distanceSheetTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+                {distanceRange === option.value && (
+                  <Icon name="check" size={18} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -840,8 +1028,18 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   sectionTitle: {
-    ...typography.h3,
+    ...typography.body,
     color: colors.neutralDark,
+    fontWeight: '600',
+  },
+  sectionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  distanceFilterText: {
+    color: colors.neutralMedium,
+    fontWeight: '500',
+    marginRight: 12,
   },
   seeAllText: {
     /* ...typography.caption, */
@@ -1124,6 +1322,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
+  replyDisabled: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutralLight,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  replyDisabledText: {
+    ...typography.caption,
+    color: colors.neutralMedium,
+    marginLeft: 8,
+  },
   replyInput: {
     flex: 1,
     color: colors.neutralDark,
@@ -1149,6 +1360,75 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  nearbyBadge: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  nearbyBadgeText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  distanceSheetOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+  },
+  distanceSheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0)',
+  },
+  distanceSheet: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    height: 260,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 12,
+  },
+  distanceSheetHandle: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.neutralLight,
+    marginBottom: 8,
+  },
+  distanceSheetTitle: {
+    ...typography.body,
+    color: colors.neutralDark,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  distanceSheetItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutralLight,
+  },
+  distanceSheetText: {
+    ...typography.body,
+    color: colors.neutralDark,
+  },
+  distanceSheetTextActive: {
+    color: colors.primary,
+    fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',

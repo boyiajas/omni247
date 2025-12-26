@@ -7,11 +7,14 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DeviceController as AdminDeviceController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\AchievementController as AdminAchievementController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\Api\GeocodingController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReportController;
@@ -44,17 +47,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
     Route::put('/user', [AuthController::class, 'updateProfile']);
+    Route::get('/user/notification-settings', [AuthController::class, 'notificationSettings']);
+    Route::put('/user/notification-settings', [AuthController::class, 'updateNotificationSettings']);
     Route::post('/user/complete-onboarding', [AuthController::class, 'completeOnboarding']);
     Route::get('/user/reports', [ReportController::class, 'userReports']);
+    Route::get('/user/rewards', [AuthController::class, 'rewards']);
+    Route::get('/user/achievements', [AuthController::class, 'achievements']);
+    Route::get('/user/privacy-settings', [AuthController::class, 'getPrivacySettings']);
+    Route::put('/user/privacy-settings', [AuthController::class, 'updatePrivacySettings']);
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index']);
     Route::post('/reports', [ReportController::class, 'store']);
     Route::get('/reports/nearby', [ReportController::class, 'nearby']);
-    Route::get('/reports/{id}', [ReportController::class, 'show']);
-    Route::put('/reports/{id}', [ReportController::class, 'update']);
-    Route::delete('/reports/{id}', [ReportController::class, 'destroy']);
-    Route::post('/reports/{id}/rate', [ReportController::class, 'rate']);
+    Route::get('/reports/{report}', [ReportController::class, 'show']);
+    Route::put('/reports/{report}', [ReportController::class, 'update']);
+    Route::delete('/reports/{report}', [ReportController::class, 'destroy']);
+    Route::post('/reports/{report}/rate', [ReportController::class, 'rate']);
 
     // Comments
     Route::get('/reports/{report}/comments', [CommentController::class, 'index']);
@@ -70,6 +79,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/media/upload', [MediaController::class, 'upload']);
     Route::get('/media/{id}', [MediaController::class, 'show']);
     Route::delete('/media/{id}', [MediaController::class, 'destroy']);
+
+    // Geocoding
+    Route::get('/geocode', [GeocodingController::class, 'geocode']);
+    Route::get('/geocode/reverse', [GeocodingController::class, 'reverse']);
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -113,5 +126,17 @@ Route::prefix('admin')->group(function () {
         Route::post('/categories', [AdminCategoryController::class, 'store']);
         Route::put('/categories/{category}', [AdminCategoryController::class, 'update']);
         Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy']);
+
+        Route::get('/achievements', [AdminAchievementController::class, 'index']);
+        Route::post('/achievements', [AdminAchievementController::class, 'store']);
+        Route::get('/achievements/{achievement}', [AdminAchievementController::class, 'show']);
+        Route::put('/achievements/{achievement}', [AdminAchievementController::class, 'update']);
+        Route::delete('/achievements/{achievement}', [AdminAchievementController::class, 'destroy']);
+
+        Route::get('/settings', [AdminSettingsController::class, 'index']);
+        Route::post('/settings', [AdminSettingsController::class, 'store']);
+        Route::get('/settings/{key}', [AdminSettingsController::class, 'show']);
+        Route::put('/settings/{key}', [AdminSettingsController::class, 'update']);
+        Route::delete('/settings/{key}', [AdminSettingsController::class, 'destroy']);
     });
 });

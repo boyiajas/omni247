@@ -11,9 +11,11 @@ import UsersView from '@/views/UsersView.vue';
 import UserDetailView from '@/views/UserDetailView.vue';
 import RolesView from '@/views/RolesView.vue';
 import CategoriesView from '@/views/CategoriesView.vue';
+import AchievementsView from '@/views/AchievementsView.vue';
 import DevicesView from '@/views/DevicesView.vue';
 import AuditTrailView from '@/views/AuditTrailView.vue';
 import MapView from '@/views/MapView.vue';
+import SettingsView from '@/views/SettingsView.vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -70,6 +72,11 @@ const router = createRouter({
                     component: CategoriesView,
                 },
                 {
+                    path: 'achievements',
+                    name: 'achievements',
+                    component: AchievementsView,
+                },
+                {
                     path: 'devices',
                     name: 'devices',
                     component: DevicesView,
@@ -83,6 +90,11 @@ const router = createRouter({
                     path: 'operations-map',
                     name: 'operations-map',
                     component: MapView,
+                },
+                {
+                    path: 'settings',
+                    name: 'settings',
+                    component: SettingsView,
                 },
             ],
         },

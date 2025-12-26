@@ -27,6 +27,8 @@ class ReportController extends Controller
             ])
             ->latest();
 
+        $viewMode = $request->get('view');
+
         // Filter by status
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -42,12 +44,60 @@ class ReportController extends Controller
             $query->where('is_emergency', true);
         }
 
+        if (in_array($viewMode, ['global', 'country'], true)) {
+            $query->havingRaw('(recent_comments_count >= 5 OR recent_views_count >= 20)');
+        }
+
+        if ($viewMode === 'country') {
+            $country = $request->get('country') ?: optional($request->user())->last_known_country;
+            if ($country) {
+                $query->where('country', $country);
+            }
+        }
+
+        if ($viewMode === 'nearby') {
+            $latitude = $request->get('latitude') ?? optional($request->user())->last_known_lat;
+            $longitude = $request->get('longitude') ?? optional($request->user())->last_known_lng;
+            $radius = $request->get('radius') ?? 25;
+
+            if (is_null($latitude) || is_null($longitude)) {
+                return response()->json([
+                    'message' => 'Latitude and longitude are required for nearby reports.',
+                ], 422);
+            }
+
+            $query->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->nearby($latitude, $longitude, $radius);
+        }
+
         $reports = $query->paginate(20);
 
         $reports->getCollection()->transform(function ($report) {
             $recentComments = (int) ($report->recent_comments_count ?? 0);
             $recentViews = (int) ($report->recent_views_count ?? 0);
             $report->is_trending = $recentComments >= 5 || $recentViews >= 20;
+            
+            // Add privacy info
+            $allowComments = true;
+            $isAnonymous = (bool) $report->is_anonymous;
+            if ($report->user && $report->user->privacy_settings) {
+                try {
+                    $privacySettings = \App\Services\PrivacyService::mergeWithDefaults($report->user->privacy_settings);
+                    $allowComments = $privacySettings['allow_comments'] ?? true;
+                    if (($privacySettings['default_report_privacy'] ?? 'public') === 'anonymous') {
+                        $isAnonymous = true;
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Privacy settings error in index: ' . $e->getMessage());
+                }
+            }
+            if ($report->privacy === 'anonymous') {
+                $isAnonymous = true;
+            }
+            $report->allow_comments = $allowComments;
+            $report->is_anonymous = $isAnonymous;
+            
             return $report;
         });
 
@@ -71,9 +121,19 @@ class ReportController extends Controller
 
         $category = Category::find($validated['category_id']);
         
+        // Get user's privacy settings for default report privacy
+        $privacySettings = \App\Services\PrivacyService::mergeWithDefaults($request->user()->privacy_settings);
+        $reportPrivacy = $validated['privacy'] ?? $privacySettings['default_report_privacy'];
+        
+        // Determine if report should be anonymous or private
+        $isAnonymous = $reportPrivacy === 'anonymous';
+        $isPrivate = $reportPrivacy === 'private';
+        
         $report = $request->user()->reports()->create([
             ...$validated,
             'is_emergency' => $category->is_emergency || ($validated['priority'] ?? '') === 'emergency',
+            'is_anonymous' => $isAnonymous,
+            'privacy' => $reportPrivacy,
         ]);
 
         // Dispatch moderation job
@@ -87,34 +147,66 @@ class ReportController extends Controller
         // Reward user for creating report
         $request->user()->addPoints(10, 'Report created', $report->id);
 
+        // Check for first report and emergency responder achievements
+        $achievementService = app(\App\Services\AchievementService::class);
+        $achievementService->checkAndAwardAchievements(
+            $request->user(), 
+            'report_created',
+            ['report' => $report]
+        );
+
         return response()->json($report->load(['category', 'media']), 201);
     }
 
-    public function show(Request $request, $id)
+    public function show(Request $request, Report $report)
     {
-        $report = Report::with(['user', 'category', 'media', 'ratings'])
-            ->findOrFail($id);
+        $report->load(['user', 'category', 'media', 'ratings']);
+        $report->increment('views_count');
+        
+        // Only create view record if user is authenticated
+        if ($request->user()) {
+            ReportView::create([
+                'report_id' => $report->id,
+                'user_id' => $request->user()->id,
+            ]);
+        }
 
-        $report->incrementViews();
-        ReportView::create([
-            'report_id' => $report->id,
-            'user_id' => $request->user()->id,
-            'viewed_at' => now(),
-        ]);
-
-        return response()->json($report);
+        // Add privacy info to response
+        $allowComments = true;
+        $isAnonymous = (bool) $report->is_anonymous;
+        if ($report->user && $report->user->privacy_settings) {
+            try {
+                $privacySettings = \App\Services\PrivacyService::mergeWithDefaults($report->user->privacy_settings);
+                $allowComments = $privacySettings['allow_comments'] ?? true;
+                if (($privacySettings['default_report_privacy'] ?? 'public') === 'anonymous') {
+                    $isAnonymous = true;
+                }
+            } catch (\Exception $e) {
+                // If privacy settings fail, default to allowing comments
+                \Log::error('Privacy settings error: ' . $e->getMessage());
+            }
+        }
+        if ($report->privacy === 'anonymous') {
+            $isAnonymous = true;
+        }
+        
+        $reportData = $report->toArray();
+        $reportData['allow_comments'] = $allowComments;
+        $reportData['is_anonymous'] = $isAnonymous;
+        
+        return response()->json($reportData);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Report $report)
     {
-        $report = Report::findOrFail($id);
-
-        $this->authorize('update', $report);
-
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
-            'status' => 'sometimes|in:pending,verified,investigating,resolved,rejected',
+            'category_id' => 'sometimes|exists:categories,id',
+            'latitude' => 'sometimes|numeric',
+            'longitude' => 'sometimes|numeric',
+            'address' => 'sometimes|string',
+            'priority' => 'sometimes|in:low,medium,high',
         ]);
 
         $report->update($validated);
@@ -122,17 +214,9 @@ class ReportController extends Controller
         return response()->json($report);
     }
 
-    public function destroy($id)
+    public function destroy(Report $report)
     {
-        $report = Report::findOrFail($id);
-
-        // Check if user owns this report
-        if ($report->user_id !== auth()->id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         $report->delete();
-
         return response()->json(['message' => 'Report deleted successfully']);
     }
 

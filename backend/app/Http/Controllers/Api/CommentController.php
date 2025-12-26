@@ -67,6 +67,16 @@ class CommentController extends Controller
         ]);
 
         $report = Report::with('user')->findOrFail($validated['report_id']);
+        
+        // Check if report owner allows comments
+        if ($report->user) {
+            $privacySettings = \App\Services\PrivacyService::mergeWithDefaults($report->user->privacy_settings);
+            if (!$privacySettings['allow_comments']) {
+                return response()->json([
+                    'message' => 'Comments are disabled for this report',
+                ], 403);
+            }
+        }
 
         $comment = Comment::create([
             'report_id' => $validated['report_id'],

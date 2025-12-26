@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 66,
     paddingBottom: 20,
   },
   headerInfo: {
@@ -620,8 +620,9 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   sectionTitle: {
-    /* ...typography.h3, */
+    ...typography.body,
     color: colors.neutralDark,
+    fontWeight: '600',
     marginBottom: 15,
   },
   badgesList: {

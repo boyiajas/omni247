@@ -6,11 +6,12 @@ import { useLocation } from '../../hooks/useLocation';
 import { colors, typography, spacing } from '../../theme';
 
 const ReportDescriptionScreen = ({ navigation, route }) => {
-    const { category, media } = route.params || {};
+    const { category, media, location: routeLocation } = route.params || {};
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [privacy, setPrivacy] = useState('public');
-    const { location } = useLocation();
+    const { location: contextLocation } = useLocation();
+    const location = routeLocation || contextLocation;
 
     const handleNext = () => {
         navigation.navigate('ReportPreview', {

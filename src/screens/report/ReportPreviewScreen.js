@@ -87,7 +87,8 @@ const ReportPreviewScreen = ({ navigation, route }) => {
           <View style={styles.metadata}>
             <Text style={styles.metadataItem}>Privacy: {privacy}</Text>
             <Text style={styles.metadataItem}>
-              Location: {Number(location?.latitude || 0).toFixed(6)}, {Number(location?.longitude || 0).toFixed(6)}
+              Location: {location?.address || location?.formattedAddress
+                || `${Number(location?.latitude || 0).toFixed(6)}, ${Number(location?.longitude || 0).toFixed(6)}`}
             </Text>
             <Text style={styles.metadataItem}>Time: {formatDate(new Date(), 'datetime')}</Text>
 

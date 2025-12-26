@@ -21,9 +21,10 @@
                     <th>Role</th>
                     <th>Status</th>
                     <th>Reports</th>
+                    <th>Points</th>
+                    <th>Achievements</th>
                     <th>Devices</th>
                     <th>Last Active</th>
-                    <th>Last IP</th>
                     <th>Location</th>
                     <th class="actions-col">Actions</th>
                 </tr>
@@ -52,9 +53,21 @@
                         </select>
                     </td>
                     <td>{{ user.reports_count }}</td>
+                    <td>
+                        <span class="points-badge">{{ user.total_points || 0 }} pts</span>
+                    </td>
+                    <td>
+                        <div class="achievements-cell">
+                            <span class="achievement-badge">
+                                <svg viewBox="0 0 24 24" width="14" height="14">
+                                    <path fill="currentColor" d="M20 2H4v2l2 2v1c0 2 2 4 4 4v2l-3 5h10l-3-5v-2c2 0 4-2 4-4V6l2-2z"/>
+                                </svg>
+                                {{ user.achievements_count || 0 }}
+                            </span>
+                        </div>
+                    </td>
                     <td>{{ user.devices_count }}</td>
                     <td>{{ user.last_active_at ? new Date(user.last_active_at).toLocaleString() : '—' }}</td>
-                    <td>{{ user.last_login_ip || '—' }}</td>
                     <td>{{ formatLocation(user) }}</td>
                     <td>
                         <button class="link-btn" @click.stop="openUser(user)">Manage</button>
@@ -169,14 +182,14 @@ table {
 
 th,
 td {
-    padding: 10px 0;
+    padding: 10px 8px;
     border-bottom: 1px solid #e2e8f0;
     text-align: left;
     font-size: 13px;
 }
 
 .actions-col {
-    width: 120px;
+    width: 100px;
 }
 
 .clickable-row {
@@ -212,6 +225,7 @@ td {
     align-items: center;
     justify-content: center;
     font-weight: 600;
+    font-size: 12px;
 }
 
 .user-name {
@@ -221,7 +235,38 @@ td {
 
 .user-meta {
     margin: 0;
-    font-size: 13px;
+    font-size: 12px;
     color: #94a3b8;
+}
+
+.points-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.achievements-cell {
+    display: flex;
+    align-items: center;
+}
+
+.achievement-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.achievement-badge svg {
+    flex-shrink: 0;
 }
 </style>

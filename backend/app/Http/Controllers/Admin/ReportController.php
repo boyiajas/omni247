@@ -76,6 +76,19 @@ class ReportController extends Controller
 
         $report->update($updates);
 
+        // Send notification to user when report is verified
+        if ($data['status'] === 'verified' && $report->user) {
+            $report->user->notifications()->create([
+                'type' => 'report_verified',
+                'title' => 'Report Verified',
+                'body' => "Your report '{$report->title}' has been verified by our team.",
+                'data' => [
+                    'report_id' => $report->id,
+                    'report_title' => $report->title,
+                ],
+            ]);
+        }
+
         AuditLogger::log(
             $request->user(),
             'admin.reports.moderate',

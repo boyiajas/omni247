@@ -23,4 +23,13 @@ export default defineConfig({
             '@': path.resolve(__dirname, 'resources/js'),
         },
     },
+    server: {
+        watch: {
+            ignored: [
+                '**/vendor/**',
+                '**/storage/**',
+                '**/node_modules/**',
+            ],
+        },
+    },
 });

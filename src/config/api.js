@@ -38,6 +38,7 @@ export default {
     PROFILE: '/user',
     UPDATE_PROFILE: '/user',
     USER_REPORTS: '/user/reports',
+    NOTIFICATION_SETTINGS: '/user/notification-settings',
 
     // Notifications
     NOTIFICATIONS: '/notifications',

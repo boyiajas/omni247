@@ -14,7 +14,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::with('roleModel')
-            ->withCount(['reports', 'devices'])
+            ->withCount(['reports', 'devices', 'achievements'])
             ->orderByDesc('created_at');
 
         if ($search = $request->query('search')) {
@@ -74,6 +74,7 @@ class UserController extends Controller
             'roleModel',
             'devices' => fn ($query) => $query->orderByDesc('last_active_at'),
             'reports' => fn ($query) => $query->latest()->take(5),
+            'achievements' => fn ($query) => $query->orderBy('earned_at', 'desc'),
         ]);
 
         return response()->json($user);

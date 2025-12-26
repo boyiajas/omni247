@@ -28,6 +28,8 @@ class Report extends Model
         'privacy',
         'is_verified',
         'is_emergency',
+        'is_anonymous',
+        'privacy',
         'views_count',
         'shares_count',
         'average_rating',
@@ -42,6 +44,7 @@ class Report extends Model
         'average_rating' => 'decimal:2',
         'is_verified' => 'boolean',
         'is_emergency' => 'boolean',
+        'is_anonymous' => 'boolean',
         'verified_at' => 'datetime',
         'resolved_at' => 'datetime',
     ];
@@ -92,14 +95,22 @@ class Report extends Model
     {
         $R = 6371; // Earth's radius in km
         
-        return $query->selectRaw("
-            *, ( {$R} * acos( cos( radians(?) ) *
+        // Use whereRaw instead of selectRaw + having to avoid conflicts with withCount
+        return $query->whereRaw("
+            ( {$R} * acos( cos( radians(?) ) *
+            cos( radians( latitude ) ) *
+            cos( radians( longitude ) - radians(?) ) +
+            sin( radians(?) ) *
+            sin( radians( latitude ) ) ) ) <= ?
+        ", [$latitude, $longitude, $latitude, $radiusKm])
+        ->selectRaw("
+            reports.*,
+            ( {$R} * acos( cos( radians(?) ) *
             cos( radians( latitude ) ) *
             cos( radians( longitude ) - radians(?) ) +
             sin( radians(?) ) *
             sin( radians( latitude ) ) ) ) AS distance
         ", [$latitude, $longitude, $latitude])
-        ->having('distance', '<=', $radiusKm)
         ->orderBy('distance');
     }
 

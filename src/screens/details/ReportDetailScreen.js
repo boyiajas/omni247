@@ -21,6 +21,7 @@ import { colors, typography, spacing } from '../../theme';
 import { formatRelativeTime } from '../../utils/formatters';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Placeholder image for reports without media
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&q=80';
@@ -47,6 +48,7 @@ const ReportDetailScreen = ({ route, navigation }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [liked, setLiked] = useState(false);
+    const [isFavorite, setIsFavorite] = useState(false);
     const [commentText, setCommentText] = useState('');
     const [comments, setComments] = useState([]);
     const [commentsLoading, setCommentsLoading] = useState(false);
@@ -63,6 +65,14 @@ const ReportDetailScreen = ({ route, navigation }) => {
             setError('No report ID provided');
         }
     }, [id]);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            if (id) {
+                loadReport();
+            }
+        }, [id])
+    );
 
     const loadReport = async () => {
         try {
@@ -152,9 +162,17 @@ const ReportDetailScreen = ({ route, navigation }) => {
                 avatar: newComment.user?.avatar_url,
             }, ...comments]);
             setCommentText('');
+            if (route.params?.onCommentAdded) {
+                route.params.onCommentAdded(id);
+            }
         } catch (err) {
             console.error('Error adding comment:', err);
-            Alert.alert('Error', 'Failed to add comment');
+            // Check if error is due to disabled comments
+            if (err.response?.status === 403) {
+                Alert.alert('Comments Disabled', 'The owner of this report has disabled comments.');
+            } else {
+                Alert.alert('Error', 'Failed to add comment');
+            }
         } finally {
             setAddingComment(false);
         }
@@ -185,7 +203,17 @@ const ReportDetailScreen = ({ route, navigation }) => {
     const isOwner = report?.user_id === user?.id;
 
     const handleEdit = () => {
-        navigation.navigate('EditReport', { reportId: id, report });
+        navigation.navigate('EditReport', {
+            reportId: id,
+            report,
+            onUpdated: (updatedReport) => {
+                if (!updatedReport) return;
+                setReport((prev) => ({
+                    ...prev,
+                    ...updatedReport,
+                }));
+            },
+        });
     };
 
     const handleDelete = () => {
@@ -253,6 +281,14 @@ const ReportDetailScreen = ({ route, navigation }) => {
                 {/* Header Image */}
                 <View style={styles.imageContainer}>
                     <Image source={{ uri: mediaUrl }} style={styles.heroImage} />
+
+                    {/* Back button - positioned over image */}
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={() => navigation.goBack()}>
+                        <Icon name="arrow-left" size={24} color={colors.white} />
+                    </TouchableOpacity>
+
                     <View style={[styles.categoryBadge, { backgroundColor: categoryColor }]}>
                         <Text style={styles.categoryText}>{categoryName}</Text>
                     </View>
@@ -270,22 +306,33 @@ const ReportDetailScreen = ({ route, navigation }) => {
                     <Text style={styles.title}>{report.title}</Text>
                     <Text style={styles.time}>{formatRelativeTime(report.created_at)}</Text>
 
-                    {/* User Info */}
-                    <View style={styles.userSection}>
-                        <View style={styles.userAvatar}>
-                            <Icon name="account" size={24} color={colors.neutralMedium} />
+                    {/* User Info - Modified for anonymous reports */}
+                    {!(report.is_anonymous || report.privacy === 'anonymous') && report.user ? (
+                        <View style={styles.userSection}>
+                            <View style={styles.userAvatar}>
+                                <Icon name="account" size={24} color={colors.neutralMedium} />
+                            </View>
+                            <View style={styles.userInfo}>
+                                <Text style={styles.userName}>
+                                    {report.user.name || 'Anonymous User'}
+                                </Text>
+                                <Text style={styles.userSubtext}>Reporter</Text>
+                            </View>
+                            {report.user.is_verified && (
+                                <Icon name="check-decagram" size={20} color={colors.primary} />
+                            )}
                         </View>
-                        <View style={styles.userInfo}>
-                            <Text style={styles.userName}>
-                                {report.user?.name || 'Anonymous User'}
-                            </Text>
-                            <Text style={styles.userSubtext}>Reporter</Text>
+                    ) : (
+                        <View style={styles.userSection}>
+                            <View style={styles.userAvatar}>
+                                <Icon name="incognito" size={24} color={colors.neutralMedium} />
+                            </View>
+                            <View style={styles.userInfo}>
+                                <Text style={styles.userName}>Anonymous User</Text>
+                                <Text style={styles.userSubtext}>Reporter</Text>
+                            </View>
                         </View>
-                        {report.user?.is_verified && (
-                            <Icon name="check-decagram" size={20} color={colors.primary} />
-                        )}
-                    </View>
-
+                    )}
                     {/* Stats Row */}
                     <View style={styles.statsRow}>
                         <View style={styles.statItem}>
@@ -414,28 +461,35 @@ const ReportDetailScreen = ({ route, navigation }) => {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Comments ({comments.length})</Text>
 
-                        {/* Add Comment */}
-                        <View style={styles.addCommentRow}>
-                            <TextInput
-                                style={styles.commentInput}
-                                placeholder="Add a comment..."
-                                value={commentText}
-                                onChangeText={setCommentText}
-                                placeholderTextColor={colors.neutralMedium}
-                                editable={!addingComment}
-                            />
-                            <TouchableOpacity
-                                style={[styles.sendButton, addingComment && styles.sendButtonDisabled]}
-                                onPress={handleAddComment}
-                                disabled={addingComment || !commentText.trim()}
-                            >
-                                {addingComment ? (
-                                    <ActivityIndicator size="small" color={colors.white} />
-                                ) : (
-                                    <Icon name="send" size={20} color={colors.white} />
-                                )}
-                            </TouchableOpacity>
-                        </View>
+                        {/* Add Comment - Only show if comments are allowed */}
+                        {report.allow_comments !== false ? (
+                            <View style={styles.addCommentRow}>
+                                <TextInput
+                                    style={styles.commentInput}
+                                    placeholder="Add a comment..."
+                                    value={commentText}
+                                    onChangeText={setCommentText}
+                                    placeholderTextColor={colors.neutralMedium}
+                                    editable={!addingComment}
+                                />
+                                <TouchableOpacity
+                                    style={[styles.sendButton, addingComment && styles.sendButtonDisabled]}
+                                    onPress={handleAddComment}
+                                    disabled={addingComment || !commentText.trim()}
+                                >
+                                    {addingComment ? (
+                                        <ActivityIndicator size="small" color={colors.white} />
+                                    ) : (
+                                        <Icon name="send" size={20} color={colors.white} />
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <View style={styles.commentsDisabledContainer}>
+                                <Icon name="comment-off-outline" size={24} color={colors.neutralMedium} />
+                                <Text style={styles.commentsDisabledText}>Comments are disabled for this report</Text>
+                            </View>
+                        )}
 
                         {/* Comments Loading */}
                         {commentsLoading && (
@@ -522,6 +576,18 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontWeight: '600',
         marginLeft: 4,
+    },
+    backButton: {
+        position: 'absolute',
+        top: 40,
+        left: 16,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
     },
     content: {
         padding: 16,
@@ -616,7 +682,7 @@ const styles = StyleSheet.create({
         borderColor: colors.neutralLight,
     },
     sectionTitle: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
         color: colors.neutralDark,
         marginBottom: 10,
@@ -769,16 +835,19 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 20,
     },
-    backButton: {
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        backgroundColor: colors.primary,
-        borderRadius: 24,
+    commentsDisabledContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: spacing.lg,
+        backgroundColor: colors.neutralLight,
+        borderRadius: 12,
+        marginBottom: spacing.md,
     },
-    backButtonText: {
-        color: colors.white,
-        fontSize: 14,
-        fontWeight: '600',
+    commentsDisabledText: {
+        fontSize: typography.sizes.sm,
+        color: colors.neutralMedium,
+        marginLeft: spacing.sm,
     },
 });
 

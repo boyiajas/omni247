@@ -1,24 +1,31 @@
 import ApiClient from './ApiClient';
-import config from '../../config/api';
 
 export const rewardsAPI = {
+    getUserRewardsAndActivities: async () => {
+        return ApiClient.get('/user/rewards');
+    },
+
+    getUserAchievements: async () => {
+        return ApiClient.get('/user/achievements');
+    },
+
     getRewards: async () => {
-        return ApiClient.get(config.ENDPOINTS.REWARDS);
+        return ApiClient.get('/rewards');
     },
 
     getAchievements: async () => {
-        return ApiClient.get(config.ENDPOINTS.ACHIEVEMENTS);
+        return ApiClient.get('/achievements');
     },
 
     redeem: async (rewardId) => {
-        return ApiClient.post(config.ENDPOINTS.REDEEM, { rewardId });
+        return ApiClient.post('/rewards/redeem', { rewardId });
     },
 
     getUserPoints: async () => {
-        return ApiClient.get(`${config.ENDPOINTS.REWARDS}/points`);
+        return ApiClient.get('/user/rewards');
     },
 
     getRewardHistory: async () => {
-        return ApiClient.get(`${config.ENDPOINTS.REWARDS}/history`);
+        return ApiClient.get('/user/rewards');
     },
 };

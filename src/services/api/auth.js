@@ -41,4 +41,12 @@ export const authAPI = {
     updateProfile: async (data) => {
         return ApiClient.put(config.ENDPOINTS.UPDATE_PROFILE, data);
     },
+
+    getNotificationSettings: async () => {
+        return ApiClient.get(config.ENDPOINTS.NOTIFICATION_SETTINGS);
+    },
+
+    updateNotificationSettings: async (data) => {
+        return ApiClient.put(config.ENDPOINTS.NOTIFICATION_SETTINGS, data);
+    },
 };

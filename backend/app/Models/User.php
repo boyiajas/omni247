@@ -28,6 +28,8 @@ class User extends Authenticatable
         'total_points',
         'avatar_url',
         'fcm_token',
+        'notification_settings',
+        'privacy_settings',
         'last_active_at',
         'last_login_ip',
         'last_known_country',
@@ -50,6 +52,8 @@ class User extends Authenticatable
         'password' => 'hashed',
         'last_known_lat' => 'float',
         'last_known_lng' => 'float',
+        'notification_settings' => 'array',
+        'privacy_settings' => 'array',
     ];
 
     protected $appends = [
@@ -75,6 +79,13 @@ class User extends Authenticatable
     public function rewards()
     {
         return $this->hasMany(Reward::class);
+    }
+
+    public function achievements()
+    {
+        return $this->belongsToMany(Achievement::class, 'user_achievements')
+            ->withTimestamps()
+            ->withPivot('earned_at', 'progress');
     }
 
     public function ratings()
@@ -128,12 +139,17 @@ class User extends Authenticatable
     {
         $this->increment('total_points', $points);
         
-        return $this->rewards()->create([
+        $reward = $this->rewards()->create([
             'report_id' => $reportId,
             'type' => 'achievement',
             'points' => $points,
             'reason' => $reason,
         ]);
+
+        // Check for tier achievements after points update
+        app(\App\Services\AchievementService::class)->checkAndAwardAchievements($this, 'points_updated');
+
+        return $reward;
     }
 
     public function isRole(string $role): bool

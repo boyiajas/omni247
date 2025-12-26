@@ -51,9 +51,27 @@
         </div>
 
         <div class="panel" v-if="report.media?.length">
-            <h3>Attachments</h3>
+            <h3>Media ({{ report.media.length }})</h3>
             <div class="media-grid">
-                <a v-for="media in report.media" :key="media.id" :href="media.url" target="_blank">{{ media.type }} - View</a>
+                <div v-for="media in report.media" :key="media.id" class="media-item">
+                    <img 
+                        v-if="media.type === 'image'" 
+                        :src="media.full_url || media.url" 
+                        :alt="'Report image ' + media.id"
+                        class="media-image"
+                        @click="openMedia(media.full_url || media.url)"
+                        @error="handleImageError($event, media)"
+                    />
+                    <video 
+                        v-else-if="media.type === 'video'" 
+                        :src="media.full_url || media.url" 
+                        controls
+                        class="media-video"
+                    />
+                    <a v-else :href="media.full_url || media.url" target="_blank" class="media-link">
+                        {{ media.type }} - View File
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -70,6 +88,14 @@
         </div>
     </div>
     <div v-else class="panel">Loading report...</div>
+
+    <!-- Image Modal -->
+    <div v-if="selectedImage" class="modal-backdrop" @click="closeModal">
+        <div class="modal-content" @click.stop>
+            <button class="modal-close" @click="closeModal">×</button>
+            <img :src="selectedImage" alt="Full size image" class="modal-image" />
+        </div>
+    </div>
 </template>
 
 <script setup>
@@ -81,6 +107,7 @@ const route = useRoute();
 const router = useRouter();
 const report = ref(null);
 const loading = ref(false);
+const selectedImage = ref(null);
 
 const fetchReport = async () => {
     loading.value = true;
@@ -110,6 +137,20 @@ const goBack = () => {
 const goToUser = (id) => {
     if (!id) return;
     router.push({ name: 'user-detail', params: { id } });
+};
+
+const openMedia = (url) => {
+    selectedImage.value = url;
+};
+
+const closeModal = () => {
+    selectedImage.value = null;
+};
+
+const handleImageError = (event, media) => {
+    console.error('Failed to load image:', media.url, media);
+    // Set a placeholder or hide the broken image
+    event.target.style.display = 'none';
 };
 
 onMounted(fetchReport);
@@ -230,14 +271,42 @@ onMounted(fetchReport);
 }
 
 .media-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
 }
 
-.media-grid a {
+.media-item {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f8fafc;
+}
+
+.media-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.media-image:hover {
+    transform: scale(1.05);
+}
+
+.media-video {
+    width: 100%;
+    max-height: 300px;
+    border-radius: 12px;
+}
+
+.media-link {
+    display: block;
+    padding: 12px;
     color: #0ea5e9;
     font-weight: 600;
+    text-align: center;
 }
 
 .comments {
@@ -268,5 +337,59 @@ onMounted(fetchReport);
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.user-name {
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Modal Styles */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    cursor: pointer;
+}
+
+.modal-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    cursor: default;
+}
+
+.modal-image {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 12px;
+}
+
+.modal-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f172a;
+}
+
+.modal-close:hover {
+    background: #f1f5f9;
 }
 </style>

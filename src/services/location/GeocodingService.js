@@ -1,35 +1,79 @@
 // Geocoding service for converting coordinates to addresses and vice versa
-// Note: This requires a geocoding API (Google Maps, MapBox, etc.)
+// Note: Reverse geocoding is proxied through the backend to keep API keys off the client.
+import ApiClient from '../api/ApiClient';
 
 class GeocodingService {
     async reverseGeocode(latitude, longitude) {
         try {
-            // TODO: Implement actual geocoding API call
-            // For now, return mock data
-            return {
-                address: 'Sample Address',
-                city: 'Sample City',
-                state: 'Sample State',
-                country: 'Sample Country',
-                postalCode: '12345',
+            const response = await ApiClient.get('/geocode/reverse', {
+                params: {
+                    lat: latitude,
+                    lng: longitude,
+                },
+            });
+
+            return response.data || {
+                address: null,
+                city: null,
+                state: null,
+                country: null,
+                postalCode: null,
+                formattedAddress: null,
             };
         } catch (error) {
             console.error('Reverse geocoding error:', error);
-            throw error;
+            return {
+                address: null,
+                city: null,
+                state: null,
+                country: null,
+                postalCode: null,
+                formattedAddress: null,
+            };
         }
     }
 
     async geocode(address) {
         try {
-            // TODO: Implement actual geocoding API call
-            // For now, return mock data
-            return {
-                latitude: 0,
-                longitude: 0,
+            if (!address) {
+                return {
+                    latitude: null,
+                    longitude: null,
+                    address: null,
+                    city: null,
+                    state: null,
+                    country: null,
+                    postalCode: null,
+                    formattedAddress: null,
+                };
+            }
+
+            const response = await ApiClient.get('/geocode', {
+                params: { address },
+            });
+
+            return response.data || {
+                latitude: null,
+                longitude: null,
+                address: null,
+                city: null,
+                state: null,
+                country: null,
+                postalCode: null,
+                formattedAddress: null,
             };
         } catch (error) {
             console.error('Geocoding error:', error);
-            throw error;
+            return {
+                latitude: null,
+                longitude: null,
+                address: null,
+                city: null,
+                state: null,
+                country: null,
+                postalCode: null,
+                formattedAddress: null,
+            };
         }
     }
 

@@ -10,11 +10,15 @@ import {
   Platform,
   Alert,
   PermissionsAndroid,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { colors, typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import Geolocation from 'react-native-geolocation-service';
+import GeocodingService from '../../services/location/GeocodingService';
 
 export default function ReportMediaScreen({ route, navigation }) {
   const { category } = route.params || {};
@@ -28,6 +32,9 @@ export default function ReportMediaScreen({ route, navigation }) {
   });
   const [isRecording, setIsRecording] = useState(false);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  const [addressModalVisible, setAddressModalVisible] = useState(false);
+  const [addressInput, setAddressInput] = useState('');
+  const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
 
   useEffect(() => {
     requestMediaPermissions();
@@ -51,13 +58,42 @@ export default function ReportMediaScreen({ route, navigation }) {
     if (Platform.OS !== 'android') return true;
 
     const fine = PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION;
+    const coarse = PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION;
 
-    const already = await PermissionsAndroid.check(fine);
-    if (already) return true;
+    const fineGranted = await PermissionsAndroid.check(fine);
+    const coarseGranted = await PermissionsAndroid.check(coarse);
+    if (fineGranted || coarseGranted) return true;
 
-    const result = await PermissionsAndroid.request(fine);
-    return result === PermissionsAndroid.RESULTS.GRANTED;
+    const result = await PermissionsAndroid.requestMultiple([fine, coarse]);
+    const fineResult = result[fine];
+    const coarseResult = result[coarse];
+
+    return (
+      fineResult === PermissionsAndroid.RESULTS.GRANTED
+      || coarseResult === PermissionsAndroid.RESULTS.GRANTED
+    );
   }
+
+  const handleLocationAction = () => {
+    Alert.alert(
+      'Add Location',
+      'Choose how you want to add the location.',
+      [
+        {
+          text: 'Use current location',
+          onPress: () => handleAddLocation(),
+        },
+        {
+          text: 'Enter address',
+          onPress: () => {
+            setAddressInput('');
+            setAddressModalVisible(true);
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
 
   const handleAddLocation = async () => {
     try {
@@ -116,18 +152,44 @@ export default function ReportMediaScreen({ route, navigation }) {
 
   const reverseGeocode = async (lat, lng) => {
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-      );
-      const data = await response.json();
-      if (data?.display_name) {
-        setLocation(prev => ({ ...prev, address: data.display_name, provided: true }));
+      const data = await GeocodingService.reverseGeocode(lat, lng);
+      const formatted = data?.formattedAddress || GeocodingService.formatAddress(data || {});
+      if (formatted) {
+        setLocation(prev => ({ ...prev, address: formatted, provided: true }));
       } else {
         setLocation(prev => ({ ...prev, address: 'Location added', provided: true }));
       }
     } catch (error) {
       console.log('Geocoding error:', error);
       setLocation(prev => ({ ...prev, address: 'Location added', provided: true }));
+    }
+  };
+
+  const handleAddressSubmit = async () => {
+    if (!addressInput.trim()) {
+      Alert.alert('Missing address', 'Please enter an address.');
+      return;
+    }
+
+    try {
+      setIsGeocodingAddress(true);
+      const data = await GeocodingService.geocode(addressInput.trim());
+      if (data?.latitude && data?.longitude) {
+        const formatted = data?.formattedAddress || GeocodingService.formatAddress(data || {});
+        setLocation({
+          latitude: data.latitude,
+          longitude: data.longitude,
+          address: formatted || addressInput.trim(),
+          provided: true,
+        });
+        setAddressModalVisible(false);
+      } else {
+        Alert.alert('Not found', 'We could not find that address. Try another one.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Unable to find that address right now.');
+    } finally {
+      setIsGeocodingAddress(false);
     }
   };
 
@@ -263,7 +325,7 @@ export default function ReportMediaScreen({ route, navigation }) {
         <View style={{ width: 24 }} />
       </View>
 
-      <TouchableOpacity style={styles.locationContainer} onPress={handleAddLocation} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.locationContainer} onPress={handleLocationAction} activeOpacity={0.8}>
         <Icon name="map-marker" size={16} color={colors.primary} />
         <Text style={styles.locationText}>
           {isFetchingLocation ? 'Getting location…' : (location?.address || 'Tap to add location (optional)')}
@@ -276,6 +338,47 @@ export default function ReportMediaScreen({ route, navigation }) {
           )}
         </View>
       </TouchableOpacity>
+
+      <Modal
+        transparent
+        animationType="fade"
+        visible={addressModalVisible}
+        onRequestClose={() => setAddressModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalCard}
+          >
+            <Text style={styles.modalTitle}>Enter address</Text>
+            <TextInput
+              value={addressInput}
+              onChangeText={setAddressInput}
+              placeholder="Street, city, country"
+              placeholderTextColor={colors.neutralMedium}
+              style={styles.modalInput}
+              autoCapitalize="words"
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancel]}
+                onPress={() => setAddressModalVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalConfirm]}
+                onPress={handleAddressSubmit}
+                disabled={isGeocodingAddress}
+              >
+                <Text style={styles.modalConfirmText}>
+                  {isGeocodingAddress ? 'Searching...' : 'Use address'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
 
       <ScrollView contentContainerStyle={styles.content}>
         {media.length > 0 ? (
@@ -444,4 +547,56 @@ const styles = StyleSheet.create({
   mediaCountText: { ...typography.caption, color: colors.neutralMedium, marginLeft: 8 },
   continueButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25 },
   continueButtonText: { ...typography.body, color: colors.white, fontWeight: '600', marginRight: 8 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalTitle: {
+    ...typography.h4,
+    color: colors.neutralDark,
+    marginBottom: 12,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: colors.neutralLight,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: colors.neutralDark,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 16,
+  },
+  modalButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 16,
+    marginLeft: 10,
+  },
+  modalCancel: {
+    backgroundColor: colors.neutralLight,
+  },
+  modalConfirm: {
+    backgroundColor: colors.primary,
+  },
+  modalCancelText: {
+    ...typography.caption,
+    color: colors.neutralDark,
+  },
+  modalConfirmText: {
+    ...typography.caption,
+    color: colors.white,
+    fontWeight: '600',
+  },
 });

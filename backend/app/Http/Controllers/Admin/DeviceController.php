@@ -25,4 +25,15 @@ class DeviceController extends Controller
             $query->paginate($request->integer('per_page', 20))
         );
     }
+
+    public function destroy($id)
+    {
+        $device = UserDevice::findOrFail($id);
+        $device->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Device deleted successfully',
+        ]);
+    }
 }

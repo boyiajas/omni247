@@ -16,22 +16,34 @@
             <thead>
                 <tr>
                     <th>User</th>
-                    <th>Device</th>
+                    <th>Device Name</th>
+                    <th>Model (IMEI)</th>
                     <th>OS</th>
                     <th>App Version</th>
                     <th>Last Active</th>
+                    <th>Last Seen</th>
                     <th class="actions-col">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-for="device in devices" :key="device.id" class="clickable-row" @click="openUser(device.user)">
                     <td>{{ device.user?.name }}</td>
-                    <td>{{ device.device_name || device.device_type || 'Unknown' }}</td>
+                    <td>{{ device.device_name || 'Unknown' }}</td>
+                    <td>
+                        <span class="imei-text">{{ device.device_model || '—' }}</span>
+                        <span v-if="device.imei" class="imei-secondary">{{ device.imei }}</span>
+                    </td>
                     <td>{{ device.os_version || '—' }}</td>
                     <td>{{ device.app_version || '—' }}</td>
                     <td>{{ device.last_active_at ? new Date(device.last_active_at).toLocaleString() : '—' }}</td>
-                    <td>
-                        <button class="link-btn" @click.stop="openUser(device.user)">View User</button>
+                    <td>{{ formatLastSeen(device.last_active_at) }}</td>
+                    <td class="actions-cell">
+                        <button class="icon-btn" @click.stop="openUser(device.user)" title="View User">
+                            <span>👁️</span>
+                        </button>
+                        <button class="icon-btn delete" @click.stop="deleteDevice(device.id)" title="Delete Device">
+                            <span>🗑️</span>
+                        </button>
                     </td>
                 </tr>
             </tbody>
@@ -56,6 +68,35 @@ const fetchDevices = async () => {
 const openUser = (user) => {
     if (!user) return;
     router.push({ name: 'user-detail', params: { id: user.id } });
+};
+
+const formatLastSeen = (lastActiveAt) => {
+    if (!lastActiveAt) return '—';
+    
+    const now = new Date();
+    const lastActive = new Date(lastActiveAt);
+    const diffMs = now - lastActive;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return `${Math.floor(diffDays / 7)}w ago`;
+};
+
+const deleteDevice = async (id) => {
+    if (!confirm('Are you sure you want to delete this device?')) return;
+    
+    try {
+        await api.delete(`/admin/devices/${id}`);
+        fetchDevices();
+    } catch (error) {
+        console.error('Error deleting device:', error);
+        alert('Failed to delete device');
+    }
 };
 
 const refreshHandler = () => fetchDevices();
@@ -106,23 +147,42 @@ td {
 }
 
 .actions-col {
-    width: 120px;
+    width: 100px;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 8px;
+    align-items: center;
 }
 
 .clickable-row {
     cursor: pointer;
 }
 
-.clickable-row:hover {
-    background: #f8fafc;
+.icon-btn {
+    border: none;
+    background: #f1f5f9;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.link-btn {
-    border: none;
-    background: none;
-    color: #0ea5e9;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 13px;
+.icon-btn:hover {
+    background: #e2e8f0;
+    transform: scale(1.1);
+}
+
+.icon-btn.delete {
+    background: #fee2e2;
+}
+
+.icon-btn.delete:hover {
+    background: #fecaca;
 }
 </style>

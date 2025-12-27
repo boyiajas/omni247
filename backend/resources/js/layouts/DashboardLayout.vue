@@ -37,7 +37,7 @@ const currentTitle = computed(() => titles[route.name] ?? 'Command Dashboard');
 
 const handleLogout = async () => {
     await auth.logout();
-    router.replace({ name: 'login' });
+    router.replace({ name: 'admin-login' });
 };
 
 const emitRefresh = () => {

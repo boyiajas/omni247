@@ -24,8 +24,20 @@ class Audit extends Model
         'metadata' => 'array',
     ];
 
+    protected $appends = ['user_name', 'user_email'];
+
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function getUserNameAttribute()
+    {
+        return $this->user ? $this->user->name : 'System';
+    }
+
+    public function getUserEmailAttribute()
+    {
+        return $this->user ? $this->user->email : null;
     }
 }

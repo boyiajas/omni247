@@ -16,6 +16,20 @@ class AuditController extends Controller
             $query->where('action', $action);
         }
 
+        if ($email = $request->query('email')) {
+            $query->whereHas('user', function($q) use ($email) {
+                $q->where('email', 'LIKE', "%{$email}%");
+            });
+        }
+
+        if ($startDate = $request->query('start_date')) {
+            $query->whereDate('created_at', '>=', $startDate);
+        }
+
+        if ($endDate = $request->query('end_date')) {
+            $query->whereDate('created_at', '<=', $endDate);
+        }
+
         return response()->json(
             $query->orderByDesc('created_at')->paginate($request->integer('per_page', 25))
         );

@@ -129,8 +129,8 @@ onBeforeUnmount(() => {
 
 .role-card {
     border: 1px solid #e2e8f0;
-    border-radius: 18px;
-    padding: 12px;
+    border-radius: 12px;
+    padding: 10px;
     margin-bottom: 8px;
     display: flex;
     justify-content: space-between;
@@ -139,7 +139,7 @@ onBeforeUnmount(() => {
 
 .role-name {
     margin: 0;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
 }
 
@@ -147,20 +147,21 @@ onBeforeUnmount(() => {
     margin: 0;
     text-transform: uppercase;
     color: #94a3b8;
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.3em;
 }
 
 .role-desc {
     margin-top: 6px;
     color: #475569;
+    font-size: 13px;
 }
 
 .role-meta {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: flex-end;
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
 }
 
 .badge {
@@ -168,17 +169,17 @@ onBeforeUnmount(() => {
     border-radius: 999px;
     padding: 4px 10px;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 button {
     border: none;
-    border-radius: 10px;
-    padding: 6px 10px;
+    border-radius: 8px;
+    padding: 5px 8px;
     background: #0ea5e9;
     color: white;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 button.danger {
@@ -193,9 +194,9 @@ button.danger {
 
 input,
 textarea {
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid #cbd5f5;
-    padding: 6px 10px;
+    padding: 6px 8px;
     font-size: 13px;
 }
 

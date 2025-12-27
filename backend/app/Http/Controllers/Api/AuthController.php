@@ -34,6 +34,25 @@ class AuthController extends Controller
 
         $token = $user->createToken('mobile')->plainTextToken;
 
+        // Register device if device info is provided
+        if ($request->has('device_uuid')) {
+            \App\Models\UserDevice::updateOrCreate(
+                ['device_uuid' => $request->device_uuid],
+                [
+                    'user_id' => $user->id,
+                    'device_type' => $request->device_type,
+                    'device_name' => $request->device_name,
+                    'device_model' => $request->device_model,
+                    'imei' => $request->imei,
+                    'app_version' => $request->app_version,
+                    'os_version' => $request->os_version,
+                    'push_token' => $request->fcm_token,
+                    'last_ip' => $request->ip(),
+                    'last_active_at' => now(),
+                ]
+            );
+        }
+
         return response()->json([
             'user' => $user,
             'token' => $token,
@@ -60,6 +79,25 @@ class AuthController extends Controller
             'has_completed_onboarding' => true,
         ]);
         $token = $user->createToken('mobile')->plainTextToken;
+
+        // Register/update device if device info is provided
+        if ($request->has('device_uuid')) {
+            \App\Models\UserDevice::updateOrCreate(
+                ['device_uuid' => $request->device_uuid],
+                [
+                    'user_id' => $user->id,
+                    'device_type' => $request->device_type,
+                    'device_name' => $request->device_name,
+                    'device_model' => $request->device_model,
+                    'imei' => $request->imei,
+                    'app_version' => $request->app_version,
+                    'os_version' => $request->os_version,
+                    'push_token' => $request->fcm_token,
+                    'last_ip' => $request->ip(),
+                    'last_active_at' => now(),
+                ]
+            );
+        }
 
         return response()->json([
             'user' => $user,

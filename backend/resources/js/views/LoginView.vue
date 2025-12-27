@@ -2,7 +2,7 @@
     <div class="login-shell">
         <div class="glow"></div>
         <div class="card">
-            <p class="eyebrow">G-iReport Pro</p>
+            <p class="eyebrow">Omni247 Pro</p>
             <h1>Facility Management Login</h1>
             <form @submit.prevent="handleSubmit">
                 <label>Email</label>

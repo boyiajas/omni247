@@ -10,7 +10,9 @@ use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\AchievementController as AdminAchievementController;
+use App\Http\Controllers\Admin\SupportTicketController as AdminSupportTicketController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\FavoriteController;
@@ -18,6 +20,7 @@ use App\Http\Controllers\Api\GeocodingController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\LandingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -30,7 +33,14 @@ use Illuminate\Support\Facades\Route;
 
 require base_path('routes/channels.php');
 
-// Public routes
+// Public API routes (no authentication required)
+Route::prefix('public')->group(function () {
+    Route::get('/reports', [LandingController::class,  'publicNews']);
+    Route::get('/stats', [LandingController::class, 'stats']);
+    Route::get('/categories', [LandingController::class, 'categories']);
+});
+
+// Unauthenticated routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/anonymous', [AuthController::class, 'anonymousLogin']);
@@ -84,6 +94,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/geocode', [GeocodingController::class, 'geocode']);
     Route::get('/geocode/reverse', [GeocodingController::class, 'reverse']);
 
+    // Alerts
+    Route::get('/alerts', [AlertController::class, 'index']);
+    Route::post('/alerts/dismiss', [AlertController::class, 'dismiss']);
+
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
@@ -91,7 +105,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
     Route::post('/notifications/register-device', [NotificationController::class, 'registerDevice']);
+
+    // User's own support tickets
+    Route::get('/support-tickets', [\App\Http\Controllers\Api\SupportTicketController::class, 'index']);
+    Route::get('/support-tickets/{id}', [\App\Http\Controllers\Api\SupportTicketController::class, 'show']);
 });
+
+// Public support ticket submission (no auth required)
+Route::post('/support-tickets', [\App\Http\Controllers\Api\SupportTicketController::class, 'store']);
 
 Route::prefix('admin')->group(function () {
     Route::post('/login', [AdminAuthController::class, 'login']);
@@ -119,7 +140,14 @@ Route::prefix('admin')->group(function () {
         Route::post('/reports/{report}/moderate', [AdminReportController::class, 'moderate']);
         Route::delete('/reports/{report}', [AdminReportController::class, 'destroy']);
 
+        Route::get('/support-tickets', [AdminSupportTicketController::class, 'index']);
+        Route::get('/support-tickets/stats', [AdminSupportTicketController::class, 'stats']);
+        Route::get('/support-tickets/{id}', [AdminSupportTicketController::class, 'show']);
+        Route::put('/support-tickets/{id}', [AdminSupportTicketController::class, 'update']);
+        Route::delete('/support-tickets/{id}', [AdminSupportTicketController::class, 'destroy']);
+
         Route::get('/devices', [AdminDeviceController::class, 'index']);
+        Route::delete('/devices/{id}', [AdminDeviceController::class, 'destroy']);
         Route::get('/audits', [AdminAuditController::class, 'index']);
 
         Route::get('/categories', [AdminCategoryController::class, 'index']);

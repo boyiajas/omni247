@@ -16,7 +16,7 @@ class SettingsSeeder extends Seeder
             // General Settings
             [
                 'key' => 'app_name',
-                'value' => 'G-iReport',
+                'value' => 'Omni247',
                 'type' => 'string',
                 'group' => 'general',
                 'description' => 'Application name displayed throughout the system',

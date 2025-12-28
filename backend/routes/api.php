@@ -59,6 +59,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/user', [AuthController::class, 'updateProfile']);
     Route::get('/user/notification-settings', [AuthController::class, 'notificationSettings']);
     Route::put('/user/notification-settings', [AuthController::class, 'updateNotificationSettings']);
+    Route::get('/user/language', [AuthController::class, 'languageSettings']);
+    Route::put('/user/language', [AuthController::class, 'updateLanguageSettings']);
+    Route::get('/user/theme', [AuthController::class, 'themeSettings']);
+    Route::put('/user/theme', [AuthController::class, 'updateThemeSettings']);
     Route::post('/user/complete-onboarding', [AuthController::class, 'completeOnboarding']);
     Route::get('/user/reports', [ReportController::class, 'userReports']);
     Route::get('/user/rewards', [AuthController::class, 'rewards']);

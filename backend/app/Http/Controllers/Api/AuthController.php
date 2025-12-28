@@ -199,6 +199,52 @@ class AuthController extends Controller
         ]);
     }
 
+    public function languageSettings(Request $request)
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'language' => $user->language ?? 'en',
+        ]);
+    }
+
+    public function updateLanguageSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'language' => 'required|in:en,yo',
+        ]);
+
+        $user = $request->user();
+        $user->update(['language' => $validated['language']]);
+
+        return response()->json([
+            'language' => $user->language,
+        ]);
+    }
+
+    public function themeSettings(Request $request)
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'theme' => $user->theme ?? 'light',
+        ]);
+    }
+
+    public function updateThemeSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'theme' => 'required|in:light,dark,pink,grey,gold,emerald,ocean,violet,midnight,charcoal,obsidian,slate,indigoNight,amoled',
+        ]);
+
+        $user = $request->user();
+        $user->update(['theme' => $validated['theme']]);
+
+        return response()->json([
+            'theme' => $user->theme,
+        ]);
+    }
+
     private function defaultNotificationSettings(): array
     {
         return [

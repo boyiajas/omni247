@@ -19,6 +19,8 @@ class AchievementService
                 break;
             
             case 'report_verified':
+                $this->checkFirstReport($user);
+                $this->checkEmergencyResponder($user, $context);
                 $this->checkVerifiedReporter($user);
                 $this->checkTopContributor($user);
                 break;
@@ -38,7 +40,7 @@ class AchievementService
      */
     private function checkFirstReport(User $user)
     {
-        $reportsCount = $user->reports()->count();
+        $reportsCount = $user->reports()->where('is_verified', true)->count();
         
         if ($reportsCount >= 1) {
             $this->awardAchievement($user, 'first_report');
@@ -50,7 +52,7 @@ class AchievementService
      */
     private function checkVerifiedReporter(User $user)
     {
-        $verifiedCount = $user->reports()->where('status', 'verified')->count();
+        $verifiedCount = $user->reports()->where('is_verified', true)->count();
         
         if ($verifiedCount >= 5) {
             $this->awardAchievement($user, 'verified_reporter');
@@ -62,7 +64,7 @@ class AchievementService
      */
     private function checkTopContributor(User $user)
     {
-        $verifiedCount = $user->reports()->where('status', 'verified')->count();
+        $verifiedCount = $user->reports()->where('is_verified', true)->count();
         
         if ($verifiedCount >= 20) {
             $this->awardAchievement($user, 'top_contributor');
@@ -74,7 +76,10 @@ class AchievementService
      */
     private function checkEmergencyResponder(User $user, array $context)
     {
-        $emergencyCount = $user->reports()->where('is_emergency', true)->count();
+        $emergencyCount = $user->reports()
+            ->where('is_emergency', true)
+            ->where('is_verified', true)
+            ->count();
         
         if ($emergencyCount >= 5) {
             $this->awardAchievement($user, 'emergency_responder');
@@ -86,10 +91,11 @@ class AchievementService
      */
     private function checkCommunityLeader(User $user)
     {
-        // Count total comments on user's reports
-        $commentsCount = \App\Models\Comment::whereIn('report_id', 
-            $user->reports()->pluck('id')
-        )->count();
+        // Count total comments on user's verified reports
+        $commentsCount = \App\Models\Comment::whereHas('report', function ($query) use ($user) {
+            $query->where('user_id', $user->id)
+                ->where('is_verified', true);
+        })->count();
         
         if ($commentsCount >= 100) {
             $this->awardAchievement($user, 'community_leader');

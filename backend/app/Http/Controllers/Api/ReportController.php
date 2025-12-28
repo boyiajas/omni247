@@ -144,17 +144,6 @@ class ReportController extends Controller
             event(new EmergencyAlertEvent($report));
         }
 
-        // Reward user for creating report
-        $request->user()->addPoints(10, 'Report created', $report->id);
-
-        // Check for first report and emergency responder achievements
-        $achievementService = app(\App\Services\AchievementService::class);
-        $achievementService->checkAndAwardAchievements(
-            $request->user(), 
-            'report_created',
-            ['report' => $report]
-        );
-
         return response()->json($report->load(['category', 'media']), 201);
     }
 

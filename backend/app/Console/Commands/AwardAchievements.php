@@ -23,21 +23,24 @@ class AwardAchievements extends Command
             // Check tier achievements based on points
             $achievementService->checkAndAwardAchievements($user, 'points_updated');
 
-            // Check for first report
-            if ($user->reports()->count() >= 1) {
-                $achievementService->checkAndAwardAchievements($user, 'report_created', []);
+            // Check for first verified report
+            if ($user->reports()->where('is_verified', true)->count() >= 1) {
+                $achievementService->checkAndAwardAchievements($user, 'report_verified', []);
             }
 
             // Check for verified reporter (5+ verified reports)
-            $verifiedCount = $user->reports()->where('status', 'verified')->count();
+            $verifiedCount = $user->reports()->where('is_verified', true)->count();
             if ($verifiedCount >= 5) {
                 $achievementService->checkAndAwardAchievements($user, 'report_verified', []);
             }
 
             // Check for emergency responder
-            $emergencyCount = $user->reports()->where('is_emergency', true)->count();
+            $emergencyCount = $user->reports()
+                ->where('is_emergency', true)
+                ->where('is_verified', true)
+                ->count();
             if ($emergencyCount >= 5) {
-                $achievementService->checkAndAwardAchievements($user, 'report_created', ['emergency' => true]);
+                $achievementService->checkAndAwardAchievements($user, 'report_verified', ['emergency' => true]);
             }
 
             $progressBar->advance();

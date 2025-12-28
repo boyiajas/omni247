@@ -57,27 +57,57 @@ class ReportController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $updates = [
-            'status' => $data['status'],
-        ];
+        $status = $data['status'];
+        $updates = [];
 
         if (isset($data['priority'])) {
             $updates['priority'] = $data['priority'];
         }
 
-        if (array_key_exists('is_verified', $data)) {
+        if ($status !== 'verified') {
+            $updates['status'] = $status;
+        }
+
+        if ($status !== 'verified' && array_key_exists('is_verified', $data)) {
             $updates['is_verified'] = $data['is_verified'];
             $updates['verified_at'] = $data['is_verified'] ? now() : null;
         }
 
-        if ($data['status'] === 'resolved') {
+        if ($status === 'resolved') {
             $updates['resolved_at'] = now();
         }
 
-        $report->update($updates);
+        if ($status === 'verified') {
+            if ($report->user) {
+                if (!$report->is_verified) {
+                    $report->markAsVerified();
+                } else {
+                    $report->update([
+                        'status' => 'verified',
+                        'verified_at' => $report->verified_at ?? now(),
+                    ]);
+                }
+
+                $achievementService = app(\App\Services\AchievementService::class);
+                $achievementService->checkAndAwardAchievements(
+                    $report->user,
+                    'report_verified',
+                    ['report' => $report, 'emergency' => $report->is_emergency]
+                );
+            } else {
+                $report->update([
+                    'status' => 'verified',
+                    'verified_at' => $report->verified_at ?? now(),
+                ]);
+            }
+        }
+
+        if (!empty($updates)) {
+            $report->update($updates);
+        }
 
         // Send notification to user when report is verified
-        if ($data['status'] === 'verified' && $report->user) {
+        if ($status === 'verified' && $report->user) {
             $report->user->notifications()->create([
                 'type' => 'report_verified',
                 'title' => 'Report Verified',

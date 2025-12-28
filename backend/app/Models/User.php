@@ -36,6 +36,8 @@ class User extends Authenticatable
         'last_known_city',
         'last_known_lat',
         'last_known_lng',
+        'language',
+        'theme',
     ];
 
     protected $hidden = [

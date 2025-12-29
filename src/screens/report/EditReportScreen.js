@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
-    StyleSheet,
     KeyboardAvoidingView,
     Platform,
     Alert,
@@ -17,9 +16,109 @@ import Button from '../../components/common/Button';
 import { reportsAPI } from '../../services/api/reports';
 import Geolocation from 'react-native-geolocation-service';
 import GeocodingService from '../../services/location/GeocodingService';
-import { colors, typography, spacing } from '../../theme';
+import { typography, spacing } from '../../theme';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import useThemedStyles from '../../theme/useThemedStyles';
 
 const EditReportScreen = ({ navigation, route }) => {
+    const { t } = useLanguage();
+    const { theme } = useTheme();
+    const colors = theme.colors;
+    const styles = useThemedStyles((palette) => ({
+        container: {
+            flex: 1,
+            backgroundColor: palette.background,
+        },
+        content: {
+            padding: spacing.xl,
+        },
+        title: {
+            fontSize: typography.sizes.xxl,
+            fontWeight: typography.weights.bold,
+            color: palette.textPrimary,
+            marginBottom: spacing.xl,
+            fontFamily: typography.families.bold,
+        },
+        actions: {
+            flexDirection: 'row',
+            marginTop: spacing.lg,
+        },
+        actionButton: {
+            flex: 1,
+            marginRight: spacing.md,
+        },
+        locationRow: {
+            backgroundColor: palette.neutralLight,
+            borderRadius: 12,
+            padding: spacing.md,
+            marginBottom: spacing.lg,
+        },
+        locationLabel: {
+            fontSize: typography.sizes.sm,
+            color: palette.textSecondary,
+            marginBottom: spacing.xs,
+            fontFamily: typography.families.medium,
+        },
+        locationValue: {
+            fontSize: typography.sizes.md,
+            color: palette.textPrimary,
+            fontFamily: typography.families.regular,
+        },
+        modalOverlay: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.35)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: spacing.lg,
+        },
+        modalCard: {
+            width: '100%',
+            backgroundColor: palette.white,
+            borderRadius: 16,
+            padding: spacing.lg,
+        },
+        modalTitle: {
+            fontSize: typography.sizes.lg,
+            fontWeight: typography.weights.bold,
+            color: palette.textPrimary,
+            marginBottom: spacing.md,
+        },
+        modalInput: {
+            borderWidth: 1,
+            borderColor: palette.border,
+            borderRadius: 12,
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.sm,
+            color: palette.textPrimary,
+        },
+        modalActions: {
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+            marginTop: spacing.md,
+        },
+        modalButton: {
+            paddingHorizontal: spacing.lg,
+            paddingVertical: spacing.sm,
+            borderRadius: 16,
+            marginLeft: spacing.sm,
+        },
+        modalCancel: {
+            backgroundColor: palette.neutralLight,
+        },
+        modalConfirm: {
+            backgroundColor: palette.primary,
+        },
+        modalCancelText: {
+            fontSize: typography.sizes.sm,
+            color: palette.textSecondary,
+        },
+        modalConfirmText: {
+            fontSize: typography.sizes.sm,
+            color: palette.white,
+            fontWeight: typography.weights.medium,
+        },
+    }));
     const paramReport = route.params?.report || null;
     const paramId = route.params?.reportId || paramReport?.id || '';
     const reportId = paramId ? paramId.toString().replace('api-', '') : '';
@@ -29,7 +128,7 @@ const EditReportScreen = ({ navigation, route }) => {
     const [location, setLocation] = useState({
         latitude: paramReport?.latitude ?? null,
         longitude: paramReport?.longitude ?? null,
-        address: paramReport?.address || 'Tap to add location (optional)',
+        address: paramReport?.address || t('reportFlow.addLocationOptional'),
         provided: Boolean(paramReport?.latitude && paramReport?.longitude),
     });
     const [loading, setLoading] = useState(false);
@@ -52,17 +151,17 @@ const EditReportScreen = ({ navigation, route }) => {
             setLocation({
                 latitude: response.data?.latitude ?? null,
                 longitude: response.data?.longitude ?? null,
-                address: response.data?.address || 'Tap to add location (optional)',
+                address: response.data?.address || t('reportFlow.addLocationOptional'),
                 provided: Boolean(response.data?.latitude && response.data?.longitude),
             });
         } catch (error) {
-            Alert.alert('Error', 'Unable to load report details.');
+            Alert.alert(t('reportFlow.addressErrorTitle'), t('reportEdit.loadError'));
         }
     };
 
     const handleSave = async () => {
         if (!title.trim() || !description.trim()) {
-            Alert.alert('Missing info', 'Title and description are required.');
+            Alert.alert(t('reportFlow.addressMissingTitle'), t('reportEdit.missingFields'));
             return;
         }
 
@@ -79,10 +178,10 @@ const EditReportScreen = ({ navigation, route }) => {
             if (route.params?.onUpdated) {
                 route.params.onUpdated(updatedReport);
             }
-            Alert.alert('Success', 'Report updated successfully.');
+            Alert.alert(t('common.success'), t('reportEdit.updateSuccess'));
             navigation.goBack();
         } catch (error) {
-            Alert.alert('Error', 'Failed to update report.');
+            Alert.alert(t('reportFlow.addressErrorTitle'), t('reportEdit.updateFailed'));
         } finally {
             setLoading(false);
         }
@@ -109,16 +208,16 @@ const EditReportScreen = ({ navigation, route }) => {
     }
 
     const handleLocationAction = () => {
-        Alert.alert('Update Location', 'Choose how you want to set the location.', [
-            { text: 'Use current location', onPress: () => handleAddLocation() },
+        Alert.alert(t('reportEdit.locationTitle'), t('reportFlow.locationAddBody'), [
+            { text: t('reportFlow.locationUseCurrent'), onPress: () => handleAddLocation() },
             {
-                text: 'Enter address',
+                text: t('reportFlow.locationEnterAddress'),
                 onPress: () => {
                     setAddressInput('');
                     setAddressModalVisible(true);
                 },
             },
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('common.cancel'), style: 'cancel' },
         ]);
     };
 
@@ -130,7 +229,7 @@ const EditReportScreen = ({ navigation, route }) => {
             const ok = await ensureLocationPermission();
             if (!ok) {
                 setIsFetchingLocation(false);
-                Alert.alert('Location permission', 'Location permission was denied.');
+                Alert.alert(t('reportFlow.locationPermissionTitle'), t('reportFlow.locationPermissionDenied'));
                 return;
             }
 
@@ -142,7 +241,7 @@ const EditReportScreen = ({ navigation, route }) => {
                     setLocation({
                         latitude: lat,
                         longitude: lng,
-                        address: 'Fetching address...',
+                        address: t('reportFlow.gettingLocation'),
                         provided: true,
                     });
 
@@ -157,7 +256,7 @@ const EditReportScreen = ({ navigation, route }) => {
                 },
                 () => {
                     setIsFetchingLocation(false);
-                    Alert.alert('Location unavailable', 'Enable GPS/location or enter an address.');
+                    Alert.alert(t('reportFlow.locationUnavailable'), t('reportFlow.locationEnableGps'));
                 },
                 {
                     enableHighAccuracy: false,
@@ -167,13 +266,13 @@ const EditReportScreen = ({ navigation, route }) => {
             );
         } catch (error) {
             setIsFetchingLocation(false);
-            Alert.alert('Location error', 'Could not fetch location.');
+            Alert.alert(t('reportFlow.locationError'), t('reportFlow.locationErrorBody'));
         }
     };
 
     const handleAddressSubmit = async () => {
         if (!addressInput.trim()) {
-            Alert.alert('Missing address', 'Please enter an address.');
+            Alert.alert(t('reportFlow.addressMissingTitle'), t('reportFlow.addressMissingBody'));
             return;
         }
 
@@ -190,10 +289,10 @@ const EditReportScreen = ({ navigation, route }) => {
                 });
                 setAddressModalVisible(false);
             } else {
-                Alert.alert('Not found', 'We could not find that address. Try another one.');
+                Alert.alert(t('reportFlow.addressNotFoundTitle'), t('reportFlow.addressNotFoundBody'));
             }
         } catch (error) {
-            Alert.alert('Error', 'Unable to find that address right now.');
+            Alert.alert(t('reportFlow.addressErrorTitle'), t('reportFlow.addressErrorBody'));
         } finally {
             setIsGeocodingAddress(false);
         }
@@ -204,37 +303,37 @@ const EditReportScreen = ({ navigation, route }) => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.title}>Edit Report</Text>
+                <Text style={styles.title}>{t('reportEdit.title')}</Text>
                 <TouchableOpacity style={styles.locationRow} onPress={handleLocationAction}>
-                    <Text style={styles.locationLabel}>Location</Text>
+                    <Text style={styles.locationLabel}>{t('reportDescription.locationLabel')}</Text>
                     <Text style={styles.locationValue}>
-                        {isFetchingLocation ? 'Getting location…' : (location?.address || 'Tap to add location')}
+                        {isFetchingLocation ? t('reportFlow.gettingLocation') : (location?.address || t('reportFlow.addLocationOptional'))}
                     </Text>
                 </TouchableOpacity>
                 <Input
-                    label="Title"
+                    label={t('reportDescription.titleLabel')}
                     value={title}
                     onChangeText={setTitle}
-                    placeholder="Brief title for the incident"
+                    placeholder={t('reportDescription.titlePlaceholder')}
                     maxLength={100}
                 />
                 <Input
-                    label="Description"
+                    label={t('reportDescription.descriptionLabel')}
                     value={description}
                     onChangeText={setDescription}
-                    placeholder="Provide details about what happened..."
+                    placeholder={t('reportDescription.descriptionPlaceholder')}
                     multiline
                     numberOfLines={6}
                 />
                 <View style={styles.actions}>
                     <Button
-                        title="Cancel"
+                        title={t('common.cancel')}
                         variant="outline"
                         onPress={() => navigation.goBack()}
                         style={styles.actionButton}
                     />
                     <Button
-                        title="Save changes"
+                        title={t('reportEdit.save')}
                         onPress={handleSave}
                         loading={loading}
                         disabled={loading}
@@ -254,11 +353,11 @@ const EditReportScreen = ({ navigation, route }) => {
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={styles.modalCard}
                     >
-                        <Text style={styles.modalTitle}>Enter address</Text>
+                        <Text style={styles.modalTitle}>{t('reportFlow.addressTitle')}</Text>
                         <TextInput
                             value={addressInput}
                             onChangeText={setAddressInput}
-                            placeholder="Street, city, country"
+                            placeholder={t('reportFlow.addressPlaceholder')}
                             placeholderTextColor={colors.textSecondary}
                             style={styles.modalInput}
                             autoCapitalize="words"
@@ -268,7 +367,7 @@ const EditReportScreen = ({ navigation, route }) => {
                                 style={[styles.modalButton, styles.modalCancel]}
                                 onPress={() => setAddressModalVisible(false)}
                             >
-                                <Text style={styles.modalCancelText}>Cancel</Text>
+                                <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.modalButton, styles.modalConfirm]}
@@ -276,7 +375,7 @@ const EditReportScreen = ({ navigation, route }) => {
                                 disabled={isGeocodingAddress}
                             >
                                 <Text style={styles.modalConfirmText}>
-                                    {isGeocodingAddress ? 'Searching...' : 'Use address'}
+                                    {isGeocodingAddress ? t('reportFlow.addressSearching') : t('reportFlow.addressUse')}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -286,100 +385,4 @@ const EditReportScreen = ({ navigation, route }) => {
         </KeyboardAvoidingView>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.white,
-    },
-    content: {
-        padding: spacing.xl,
-    },
-    title: {
-        fontSize: typography.sizes.xxl,
-        fontWeight: typography.weights.bold,
-        color: colors.textPrimary,
-        marginBottom: spacing.xl,
-        fontFamily: typography.families.bold,
-    },
-    actions: {
-        flexDirection: 'row',
-        marginTop: spacing.lg,
-    },
-    actionButton: {
-        flex: 1,
-        marginRight: spacing.md,
-    },
-    locationRow: {
-        backgroundColor: colors.background,
-        borderRadius: 12,
-        padding: spacing.md,
-        marginBottom: spacing.lg,
-    },
-    locationLabel: {
-        fontSize: typography.sizes.sm,
-        color: colors.textSecondary,
-        marginBottom: spacing.xs,
-        fontFamily: typography.families.medium,
-    },
-    locationValue: {
-        fontSize: typography.sizes.md,
-        color: colors.textPrimary,
-        fontFamily: typography.families.regular,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.35)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: spacing.lg,
-    },
-    modalCard: {
-        width: '100%',
-        backgroundColor: colors.white,
-        borderRadius: 16,
-        padding: spacing.lg,
-    },
-    modalTitle: {
-        fontSize: typography.sizes.lg,
-        fontWeight: typography.weights.bold,
-        color: colors.textPrimary,
-        marginBottom: spacing.md,
-    },
-    modalInput: {
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: 12,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        color: colors.textPrimary,
-    },
-    modalActions: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        marginTop: spacing.md,
-    },
-    modalButton: {
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.sm,
-        borderRadius: 16,
-        marginLeft: spacing.sm,
-    },
-    modalCancel: {
-        backgroundColor: colors.background,
-    },
-    modalConfirm: {
-        backgroundColor: colors.primary,
-    },
-    modalCancelText: {
-        fontSize: typography.sizes.sm,
-        color: colors.textSecondary,
-    },
-    modalConfirmText: {
-        fontSize: typography.sizes.sm,
-        color: colors.white,
-        fontWeight: typography.weights.medium,
-    },
-});
-
 export default EditReportScreen;

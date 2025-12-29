@@ -1,6 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { Animated, StyleSheet, Modal, TouchableWithoutFeedback, View } from 'react-native';
-import { colors } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const BottomSheet = ({
     visible,
@@ -9,6 +9,30 @@ const BottomSheet = ({
     height = 400,
 }) => {
     const slideAnim = useRef(new Animated.Value(height)).current;
+    const { theme } = useTheme();
+    const colors = theme.colors;
+    const styles = useMemo(() => StyleSheet.create({
+        overlay: {
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            justifyContent: 'flex-end',
+        },
+        bottomSheet: {
+            backgroundColor: colors.white,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            paddingHorizontal: 16,
+            paddingBottom: 20,
+        },
+        handle: {
+            width: 40,
+            height: 4,
+            backgroundColor: colors.border,
+            borderRadius: 2,
+            alignSelf: 'center',
+            marginVertical: 12,
+        },
+    }), [colors]);
 
     useEffect(() => {
         if (visible) {
@@ -53,28 +77,5 @@ const BottomSheet = ({
         </Modal>
     );
 };
-
-const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
-    },
-    bottomSheet: {
-        backgroundColor: colors.white,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        paddingHorizontal: 16,
-        paddingBottom: 20,
-    },
-    handle: {
-        width: 40,
-        height: 4,
-        backgroundColor: colors.border,
-        borderRadius: 2,
-        alignSelf: 'center',
-        marginVertical: 12,
-    },
-});
 
 export default BottomSheet;

@@ -8,11 +8,19 @@
     
     <div class="hero-container">
       <div class="hero-content">
-        <h1 class="hero-title">Report. Track. Engage.</h1>
+        <span class="hero-eyebrow">Mobile incident intelligence</span>
+        <h1 class="hero-title">See what is happening. Report what matters.</h1>
         <p class="hero-subtitle">
-          Community-powered incident reporting for safer cities
+          Omni247 turns community reports into verified, location-accurate alerts for safer neighborhoods.
+          Share incidents with media, track updates, and stay informed in real time.
         </p>
-        
+
+        <div class="hero-points">
+          <div class="point-item">Verified reports and credibility scoring</div>
+          <div class="point-item">Anonymous or public submissions</div>
+          <div class="point-item">Agency response coordination</div>
+        </div>
+
         <div class="stats-row">
           <div class="stat">
             <div class="stat-value">{{ formatNumber(stats.total_reports) }}</div>
@@ -27,10 +35,10 @@
             <div class="stat-label">Cities</div>
           </div>
         </div>
-        
+
         <div class="cta-buttons">
           <a href="#news" class="btn btn-large btn-primary">Browse Reports</a>
-          <a href="#features" class="btn btn-large btn-outline">Learn More</a>
+          <a href="#features" class="btn btn-large btn-outline">Explore Features</a>
         </div>
       </div>
     </div>
@@ -114,8 +122,18 @@ const formatNumber = (num) => {
   text-align: center;
 }
 
+.hero-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
 .hero-title {
-  font-size: 42px;
+  font-size: 44px;
   font-weight: 800;
   margin-bottom: 16px;
   line-height: 1.2;
@@ -124,7 +142,7 @@ const formatNumber = (num) => {
 }
 
 .hero-subtitle {
-  font-size: 20px;
+  font-size: 18px;
   opacity: 0.95;
   margin-bottom: 32px;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -137,7 +155,7 @@ const formatNumber = (num) => {
   display: flex;
   justify-content: center;
   gap: 48px;
-  margin-bottom: 32px;
+  margin: 28px 0 32px;
   padding: 24px 0;
 }
 
@@ -174,6 +192,24 @@ const formatNumber = (num) => {
   display: flex;
   justify-content: center;
   gap: 16px;
+}
+
+.hero-points {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.point-item {
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .btn {
@@ -250,6 +286,11 @@ const formatNumber = (num) => {
   
   .cta-buttons {
     flex-direction: column;
+  }
+
+  .hero-points {
+    flex-direction: column;
+    align-items: center;
   }
   
   .btn-large {

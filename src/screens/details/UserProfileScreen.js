@@ -4,32 +4,34 @@ import {
     RefreshControl,
     SafeAreaView,
     ScrollView,
-    StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors, spacing, typography } from '../../theme';
+import { spacing, typography } from '../../theme';
 import { useAuth } from '../../contexts/AuthContext';
 import { reportsAPI } from '../../services/api/reports';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import useThemedStyles from '../../theme/useThemedStyles';
 
-const STATUS_THEME = {
-    pending: { label: 'Pending', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.15)', icon: 'clock-outline' },
-    investigating: { label: 'Investigating', color: '#3b82f6', background: 'rgba(59, 130, 246, 0.15)', icon: 'shield-search' },
-    verified: { label: 'Verified', color: '#10b981', background: 'rgba(16, 185, 129, 0.15)', icon: 'check-circle' },
-    resolved: { label: 'Resolved', color: '#6366f1', background: 'rgba(99, 102, 241, 0.15)', icon: 'check-decagram' },
-    rejected: { label: 'Rejected', color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', icon: 'close-circle' },
-};
+const getStatusTheme = (t) => ({
+    pending: { label: t('userProfile.statusPending'), color: '#f59e0b', background: 'rgba(245, 158, 11, 0.15)', icon: 'clock-outline' },
+    investigating: { label: t('userProfile.statusInvestigating'), color: '#3b82f6', background: 'rgba(59, 130, 246, 0.15)', icon: 'shield-search' },
+    verified: { label: t('userProfile.statusVerified'), color: '#10b981', background: 'rgba(16, 185, 129, 0.15)', icon: 'check-circle' },
+    resolved: { label: t('userProfile.statusResolved'), color: '#6366f1', background: 'rgba(99, 102, 241, 0.15)', icon: 'check-decagram' },
+    rejected: { label: t('userProfile.statusRejected'), color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', icon: 'close-circle' },
+});
 
-const MyReportCard = ({ report, onPress }) => {
-    const theme = STATUS_THEME[report.status] || STATUS_THEME.pending;
+const MyReportCard = ({ report, onPress, statusTheme, t, locale, styles, colors }) => {
+    const theme = statusTheme[report.status] || statusTheme.pending;
     return (
         <TouchableOpacity style={styles.reportCard} onPress={onPress} activeOpacity={0.85}>
             <View style={styles.reportHeader}>
                 <View style={styles.reportCategory}>
                     <Icon name={report.category?.icon || 'alert-circle'} size={18} color={colors.primary} />
-                    <Text style={styles.reportCategoryText}>{report.category?.name || 'Uncategorized'}</Text>
+                    <Text style={styles.reportCategoryText}>{report.category?.name || t('userProfile.uncategorized')}</Text>
                 </View>
                 <View style={[styles.statusPill, { backgroundColor: theme.background }]}>
                     <Icon name={theme.icon} size={14} color={theme.color} />
@@ -40,32 +42,32 @@ const MyReportCard = ({ report, onPress }) => {
                 {report.title}
             </Text>
             <Text style={styles.reportMeta}>
-                #{report.reference_code || report.id} • {formatDate(report.created_at)}
+                #{report.reference_code || report.id} • {formatDate(report.created_at, locale, t)}
             </Text>
             <View style={styles.reportFooter}>
-                <InfoChip icon="map-marker" text={report.city || report.address || 'Unknown location'} />
-                <InfoChip icon="comment" text={`${report.comments_count || 0} comments`} />
+                <InfoChip icon="map-marker" text={report.city || report.address || t('userProfile.unknownLocation')} styles={styles} colors={colors} />
+                <InfoChip icon="comment" text={t('userProfile.commentsCount', { count: report.comments_count || 0 })} styles={styles} colors={colors} />
             </View>
         </TouchableOpacity>
     );
 };
 
-const InfoChip = ({ icon, text }) => (
+const InfoChip = ({ icon, text, styles, colors }) => (
     <View style={styles.infoChip}>
-        <Icon name={icon} size={14} color={colors.neutralDark} />
+        <Icon name={icon} size={14} color={colors.textPrimary} />
         <Text style={styles.infoChipText} numberOfLines={1}>
             {text}
         </Text>
     </View>
 );
 
-const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown date';
+const formatDate = (dateString, locale, t) => {
+    if (!dateString) return t('userProfile.unknownDate');
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' });
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' });
 };
 
-const SummaryCard = ({ label, value, icon, color, style: customStyle }) => (
+const SummaryCard = ({ label, value, icon, color, style: customStyle, styles }) => (
     <View style={[styles.summaryCard, customStyle]}>
         <View style={[styles.summaryIcon, { backgroundColor: `${color}15` }]}>
             <Icon name={icon} size={18} color={color} />
@@ -77,11 +79,234 @@ const SummaryCard = ({ label, value, icon, color, style: customStyle }) => (
 
 const UserProfileScreen = ({ route, navigation }) => {
     const { user } = useAuth();
+    const { t, language } = useLanguage();
+    const { theme } = useTheme();
+    const colors = theme.colors;
+    const styles = useThemedStyles((palette) => ({
+        safeArea: {
+            flex: 1,
+            backgroundColor: palette.background,
+        },
+        container: {
+            flex: 1,
+        },
+        scrollContent: {
+            padding: spacing.lg,
+            paddingBottom: spacing.xxl,
+        },
+        heroCard: {
+            backgroundColor: palette.primary,
+            borderRadius: 20,
+            padding: spacing.lg,
+            marginBottom: spacing.lg,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+        },
+        heroEyebrow: {
+            color: 'rgba(255,255,255,0.7)',
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+            fontSize: 12,
+        },
+        heroTitle: {
+            color: palette.white,
+            fontSize: 22,
+            fontWeight: '700',
+            marginTop: 4,
+        },
+        heroSubtitle: {
+            color: 'rgba(255,255,255,0.85)',
+            marginTop: 6,
+        },
+        heroMeta: {
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            borderRadius: 999,
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        heroMetaText: {
+            color: palette.white,
+            fontWeight: '600',
+            marginLeft: 8,
+        },
+        summaryRow: {
+            flexDirection: 'row',
+            marginBottom: spacing.lg,
+            justifyContent: 'space-between',
+        },
+        summaryCard: {
+            flex: 1,
+            backgroundColor: palette.white,
+            borderRadius: 16,
+            padding: spacing.md,
+            alignItems: 'center',
+            elevation: 2,
+            shadowColor: '#000',
+            shadowOpacity: 0.08,
+            shadowRadius: 8,
+        },
+        summarySpacing: {
+            marginRight: 10,
+        },
+        summaryIcon: {
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 8,
+        },
+        summaryValue: {
+            fontSize: 18,
+            fontWeight: '700',
+            color: palette.textPrimary,
+        },
+        summaryLabel: {
+            fontSize: 12,
+            color: palette.textSecondary,
+        },
+        reportList: {},
+        reportCard: {
+            backgroundColor: palette.white,
+            padding: spacing.md,
+            borderRadius: 18,
+            shadowColor: '#0f172a',
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            elevation: 2,
+            marginBottom: 12,
+        },
+        reportHeader: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+        },
+        reportCategory: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        reportCategoryText: {
+            fontWeight: '600',
+            color: palette.textPrimary,
+            marginLeft: 6,
+        },
+        statusPill: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderRadius: 999,
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+        },
+        statusPillText: {
+            fontSize: 12,
+            fontWeight: '600',
+            marginLeft: 6,
+        },
+        reportTitle: {
+            fontSize: 16,
+            fontWeight: '700',
+            color: palette.textPrimary,
+            marginBottom: 6,
+        },
+        reportMeta: {
+            color: palette.textSecondary,
+            fontSize: 13,
+            marginBottom: 10,
+        },
+        reportFooter: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+        },
+        infoChip: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderRadius: 999,
+            backgroundColor: palette.neutralLight,
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            marginRight: 10,
+            marginBottom: 8,
+        },
+        infoChipText: {
+            fontSize: 12,
+            color: palette.textPrimary,
+            maxWidth: 140,
+            marginLeft: 6,
+        },
+        loader: {
+            alignItems: 'center',
+            paddingVertical: spacing.xl,
+        },
+        loaderText: {
+            marginTop: spacing.md,
+            color: palette.textSecondary,
+        },
+        emptyState: {
+            alignItems: 'center',
+            paddingVertical: spacing.xl,
+        },
+        emptyTitle: {
+            marginTop: spacing.md,
+            fontSize: 18,
+            fontWeight: '700',
+            color: palette.textPrimary,
+        },
+        emptySubtitle: {
+            color: palette.textSecondary,
+            marginTop: 4,
+            marginBottom: spacing.md,
+        },
+        primaryButton: {
+            backgroundColor: palette.primary,
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            borderRadius: 999,
+        },
+        primaryButtonText: {
+            color: palette.white,
+            fontWeight: '600',
+        },
+        errorCard: {
+            alignItems: 'center',
+            backgroundColor: palette.white,
+            borderRadius: 16,
+            padding: spacing.lg,
+        },
+        errorTitle: {
+            fontSize: 18,
+            fontWeight: '700',
+            color: palette.textPrimary,
+            marginTop: spacing.sm,
+        },
+        errorSubtitle: {
+            color: palette.textSecondary,
+            textAlign: 'center',
+            marginTop: 4,
+        },
+        retryButton: {
+            marginTop: spacing.sm,
+            paddingHorizontal: 18,
+            paddingVertical: 8,
+            borderRadius: 999,
+            borderWidth: 1,
+            borderColor: palette.secondary,
+        },
+        retryText: {
+            color: palette.secondary,
+            fontWeight: '600',
+        },
+    }));
     const routeUser = route?.params || {};
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState(null);
+    const locale = language === 'yo' ? 'yo-NG' : 'en-US';
+    const statusTheme = useMemo(() => getStatusTheme(t), [t]);
 
     const loadReports = async (isRefresh = false) => {
         try {
@@ -96,7 +321,7 @@ const UserProfileScreen = ({ route, navigation }) => {
             setError(null);
         } catch (err) {
             console.error('Unable to load reports', err);
-            setError('Unable to fetch your reports right now.');
+            setError(t('userProfile.errorSubtitle'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -122,7 +347,7 @@ const UserProfileScreen = ({ route, navigation }) => {
             return (
                 <View style={styles.loader}>
                     <ActivityIndicator size="large" color={colors.primary} />
-                    <Text style={styles.loaderText}>Loading your reports…</Text>
+                    <Text style={styles.loaderText}>{t('userProfile.loading')}</Text>
                 </View>
             );
         }
@@ -131,10 +356,10 @@ const UserProfileScreen = ({ route, navigation }) => {
             return (
                 <View style={styles.errorCard}>
                     <Icon name="wifi-off" size={32} color={colors.secondary} />
-                    <Text style={styles.errorTitle}>Something went wrong</Text>
+                    <Text style={styles.errorTitle}>{t('userProfile.errorTitle')}</Text>
                     <Text style={styles.errorSubtitle}>{error}</Text>
                     <TouchableOpacity style={styles.retryButton} onPress={() => loadReports()}>
-                        <Text style={styles.retryText}>Try again</Text>
+                        <Text style={styles.retryText}>{t('userProfile.retry')}</Text>
                     </TouchableOpacity>
                 </View>
             );
@@ -143,11 +368,11 @@ const UserProfileScreen = ({ route, navigation }) => {
         if (reports.length === 0) {
             return (
                 <View style={styles.emptyState}>
-                    <Icon name="file-document-outline" size={48} color={colors.neutralMedium} />
-                    <Text style={styles.emptyTitle}>No reports yet</Text>
-                    <Text style={styles.emptySubtitle}>Submit your first report to see it here.</Text>
+                    <Icon name="file-document-outline" size={48} color={colors.textSecondary} />
+                    <Text style={styles.emptyTitle}>{t('userProfile.emptyTitle')}</Text>
+                    <Text style={styles.emptySubtitle}>{t('userProfile.emptySubtitle')}</Text>
                     <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('ReportFlow')}>
-                        <Text style={styles.primaryButtonText}>Create a report</Text>
+                        <Text style={styles.primaryButtonText}>{t('userProfile.createReport')}</Text>
                     </TouchableOpacity>
                 </View>
             );
@@ -160,6 +385,11 @@ const UserProfileScreen = ({ route, navigation }) => {
                         key={report.id}
                         report={report}
                         onPress={() => navigation.navigate('ReportDetail', { reportId: report.id })}
+                        statusTheme={statusTheme}
+                        t={t}
+                        locale={locale}
+                        styles={styles}
+                        colors={colors}
                     />
                 ))}
             </View>
@@ -174,27 +404,28 @@ const UserProfileScreen = ({ route, navigation }) => {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}>
                 <View style={styles.heroCard}>
                     <View>
-                        <Text style={styles.heroEyebrow}>My Reports</Text>
-                        <Text style={styles.heroTitle}>{routeUser?.name || user?.name || 'Your profile'}</Text>
+                        <Text style={styles.heroEyebrow}>{t('userProfile.title')}</Text>
+                        <Text style={styles.heroTitle}>{routeUser?.name || user?.name || t('userProfile.profileFallback')}</Text>
                         <Text style={styles.heroSubtitle}>{routeUser?.email || user?.email || ''}</Text>
                     </View>
-                    <View style={styles.heroMeta}>
-                        <Icon name="clipboard-text" size={18} color={colors.white} />
-                        <Text style={styles.heroMetaText}>{summary.total} total</Text>
-                    </View>
+                <View style={styles.heroMeta}>
+                    <Icon name="clipboard-text" size={18} color={colors.white} />
+                    <Text style={styles.heroMetaText}>{t('userProfile.totalReports', { count: summary.total })}</Text>
                 </View>
+            </View>
 
                 <View style={styles.summaryRow}>
                     {[
-                        { label: 'Total', value: summary.total, icon: 'file-multiple', color: '#3b82f6' },
-                        { label: 'Verified', value: summary.verified, icon: 'shield-check', color: '#10b981' },
-                        { label: 'Resolved', value: summary.resolved, icon: 'check-circle', color: '#8b5cf6' },
-                        { label: 'Pending', value: summary.pending, icon: 'progress-clock', color: '#f97316' },
+                        { label: t('userProfile.summaryTotal'), value: summary.total, icon: 'file-multiple', color: '#3b82f6' },
+                        { label: t('userProfile.summaryVerified'), value: summary.verified, icon: 'shield-check', color: '#10b981' },
+                        { label: t('userProfile.summaryResolved'), value: summary.resolved, icon: 'check-circle', color: '#8b5cf6' },
+                        { label: t('userProfile.summaryPending'), value: summary.pending, icon: 'progress-clock', color: '#f97316' },
                     ].map((card, index, arr) => (
                         <SummaryCard
                             key={card.label}
                             {...card}
                             style={index < arr.length - 1 ? styles.summarySpacing : null}
+                            styles={styles}
                         />
                     ))}
                 </View>
@@ -204,224 +435,4 @@ const UserProfileScreen = ({ route, navigation }) => {
         </SafeAreaView>
     );
 };
-
-const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
-    container: {
-        flex: 1,
-    },
-    scrollContent: {
-        padding: spacing.lg,
-        paddingBottom: spacing.xxl,
-    },
-    heroCard: {
-        backgroundColor: colors.primary,
-        borderRadius: 20,
-        padding: spacing.lg,
-        marginBottom: spacing.lg,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    heroEyebrow: {
-        color: 'rgba(255,255,255,0.7)',
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-        fontSize: 12,
-    },
-    heroTitle: {
-        color: colors.white,
-        fontSize: 22,
-        fontWeight: '700',
-        marginTop: 4,
-    },
-    heroSubtitle: {
-        color: 'rgba(255,255,255,0.85)',
-        marginTop: 6,
-    },
-    heroMeta: {
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 999,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    heroMetaText: {
-        color: colors.white,
-        fontWeight: '600',
-        marginLeft: 8,
-    },
-    summaryRow: {
-        flexDirection: 'row',
-        marginBottom: spacing.lg,
-        justifyContent: 'space-between',
-    },
-    summaryCard: {
-        flex: 1,
-        backgroundColor: colors.white,
-        borderRadius: 16,
-        padding: spacing.md,
-        alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-    },
-    summarySpacing: {
-        marginRight: 10,
-    },
-    summaryIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    summaryValue: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: colors.neutralDark,
-    },
-    summaryLabel: {
-        fontSize: 12,
-        color: colors.neutralMedium,
-    },
-    reportList: {},
-    reportCard: {
-        backgroundColor: colors.white,
-        padding: spacing.md,
-        borderRadius: 18,
-        shadowColor: '#0f172a',
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        elevation: 2,
-        marginBottom: 12,
-    },
-    reportHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    reportCategory: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    reportCategoryText: {
-        fontWeight: '600',
-        color: colors.neutralDark,
-        marginLeft: 6,
-    },
-    statusPill: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 999,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-    },
-    statusPillText: {
-        fontSize: 12,
-        fontWeight: '600',
-        marginLeft: 6,
-    },
-    reportTitle: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: colors.neutralDark,
-        marginBottom: 6,
-    },
-    reportMeta: {
-        color: colors.neutralMedium,
-        fontSize: 13,
-        marginBottom: 10,
-    },
-    reportFooter: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-    },
-    infoChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 999,
-        backgroundColor: '#f1f5f9',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        marginRight: 10,
-        marginBottom: 8,
-    },
-    infoChipText: {
-        fontSize: 12,
-        color: colors.neutralDark,
-        maxWidth: 140,
-        marginLeft: 6,
-    },
-    loader: {
-        alignItems: 'center',
-        paddingVertical: spacing.xl,
-    },
-    loaderText: {
-        marginTop: spacing.md,
-        color: colors.neutralMedium,
-    },
-    emptyState: {
-        alignItems: 'center',
-        paddingVertical: spacing.xl,
-    },
-    emptyTitle: {
-        marginTop: spacing.md,
-        fontSize: 18,
-        fontWeight: '700',
-        color: colors.neutralDark,
-    },
-    emptySubtitle: {
-        color: colors.neutralMedium,
-        marginTop: 4,
-        marginBottom: spacing.md,
-    },
-    primaryButton: {
-        backgroundColor: colors.primary,
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 999,
-    },
-    primaryButtonText: {
-        color: colors.white,
-        fontWeight: '600',
-    },
-    errorCard: {
-        alignItems: 'center',
-        backgroundColor: colors.white,
-        borderRadius: 16,
-        padding: spacing.lg,
-    },
-    errorTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: colors.neutralDark,
-        marginTop: spacing.sm,
-    },
-    errorSubtitle: {
-        color: colors.neutralMedium,
-        textAlign: 'center',
-        marginTop: 4,
-    },
-    retryButton: {
-        marginTop: spacing.sm,
-        paddingHorizontal: 18,
-        paddingVertical: 8,
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: colors.secondary,
-    },
-    retryText: {
-        color: colors.secondary,
-        fontWeight: '600',
-    },
-});
-
 export default UserProfileScreen;

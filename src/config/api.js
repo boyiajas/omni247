@@ -39,11 +39,17 @@ export default {
     UPDATE_PROFILE: '/user',
     USER_REPORTS: '/user/reports',
     NOTIFICATION_SETTINGS: '/user/notification-settings',
+    LANGUAGE_SETTINGS: '/user/language',
+    THEME_SETTINGS: '/user/theme',
 
     // Notifications
     NOTIFICATIONS: '/notifications',
     MARK_AS_READ: (id) => `/notifications/${id}/read`,
     REGISTER_DEVICE: '/notifications/register-device',
+
+    // Alerts
+    ALERTS: '/alerts',
+    ALERT_DISMISS: '/alerts/dismiss',
 
     // Rewards
     REWARDS: '/rewards',
@@ -58,6 +64,9 @@ export default {
 
     // Categories
     CATEGORIES: '/categories',
+
+    // Support
+    SUPPORT_TICKETS: '/support-tickets',
   },
 
   // Request timeout
@@ -66,3 +75,6 @@ export default {
   // Pagination
   PAGE_SIZE: 20,
 };
+
+// Export the base API URL for direct fetch calls
+export const API_BASE_URL = API_URL;

@@ -2,13 +2,15 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import Card from '../../components/common/Card';
 import { colors, typography, spacing } from '../../theme';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const RedemptionScreen = () => {
+    const { t } = useLanguage();
     return (
         <ScrollView style={styles.container}>
-            <Text style={styles.title}>Redeem Rewards</Text>
+            <Text style={styles.title}>{t('rewards.redeemTitle')}</Text>
             <Card>
-                <Text>Redemption coming soon</Text>
+                <Text>{t('rewards.redeemSoon')}</Text>
             </Card>
         </ScrollView>
     );

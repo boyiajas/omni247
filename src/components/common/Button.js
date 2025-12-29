@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { colors, typography, spacing } from '../../theme';
+import { typography, spacing } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const Button = ({
     title,
@@ -14,6 +15,59 @@ const Button = ({
     style,
     textStyle,
 }) => {
+    const { theme } = useTheme();
+    const colors = theme.colors;
+    const buttonStyles = useMemo(() => StyleSheet.create({
+        base: {
+            borderRadius: 12,
+            overflow: 'hidden',
+        },
+        gradient: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: spacing.md,
+            paddingHorizontal: spacing.lg,
+        },
+        small: {
+            paddingVertical: spacing.sm,
+            paddingHorizontal: spacing.md,
+        },
+        large: {
+            paddingVertical: spacing.lg,
+            paddingHorizontal: spacing.xl,
+        },
+        outline: {
+            borderWidth: 2,
+            borderColor: colors.primary,
+            paddingVertical: spacing.md,
+            paddingHorizontal: spacing.lg,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        disabled: {
+            opacity: 0.5,
+        },
+        text: {
+            color: colors.white,
+            fontSize: typography.sizes.md,
+            fontWeight: typography.weights.semibold,
+            fontFamily: typography.families.medium,
+        },
+        textSmall: {
+            fontSize: typography.sizes.sm,
+        },
+        textLarge: {
+            fontSize: typography.sizes.lg,
+        },
+        textOutline: {
+            color: colors.primary,
+        },
+        textDisabled: {
+            color: colors.textSecondary,
+        },
+    }), [colors]);
     const getButtonStyles = () => {
         const styles = [buttonStyles.base];
 
@@ -94,57 +148,5 @@ const Button = ({
         </TouchableOpacity>
     );
 };
-
-const buttonStyles = StyleSheet.create({
-    base: {
-        borderRadius: 12,
-        overflow: 'hidden',
-    },
-    gradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: spacing.md,
-        paddingHorizontal: spacing.lg,
-    },
-    small: {
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.md,
-    },
-    large: {
-        paddingVertical: spacing.lg,
-        paddingHorizontal: spacing.xl,
-    },
-    outline: {
-        borderWidth: 2,
-        borderColor: colors.primary,
-        paddingVertical: spacing.md,
-        paddingHorizontal: spacing.lg,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    disabled: {
-        opacity: 0.5,
-    },
-    text: {
-        color: colors.white,
-        fontSize: typography.sizes.md,
-        fontWeight: typography.weights.semibold,
-        fontFamily: typography.families.medium,
-    },
-    textSmall: {
-        fontSize: typography.sizes.sm,
-    },
-    textLarge: {
-        fontSize: typography.sizes.lg,
-    },
-    textOutline: {
-        color: colors.primary,
-    },
-    textDisabled: {
-        color: colors.textSecondary,
-    },
-});
 
 export default Button;

@@ -9,17 +9,279 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
-import { colors, typography } from '../../theme/colors';
+import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MapView, { Heatmap, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { LineChart } from 'react-native-chart-kit';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import useThemedStyles from '../../theme/useThemedStyles';
 
 const { width } = Dimensions.get('window');
 
 export default function AgencyDashboardScreen() {
+  const { t, language } = useLanguage();
+  const { theme } = useTheme();
+  const colors = theme.colors;
+  const styles = useThemedStyles((palette) => ({
+    container: {
+      flex: 1,
+      backgroundColor: palette.background,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      ...typography.body,
+      color: palette.textSecondary,
+      marginTop: 20,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.border,
+    },
+    headerTitle: {
+      ...typography.h2,
+      color: palette.textPrimary,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    headerButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginLeft: 15,
+    },
+    headerButtonText: {
+      ...typography.caption,
+      color: palette.textPrimary,
+      marginLeft: 5,
+    },
+    tabs: {
+      flexDirection: 'row',
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.border,
+    },
+    tab: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      marginRight: 10,
+      borderRadius: 20,
+    },
+    tabActive: {
+      backgroundColor: palette.primary,
+    },
+    tabText: {
+      ...typography.caption,
+      color: palette.textSecondary,
+      fontWeight: '500',
+    },
+    tabTextActive: {
+      color: palette.white,
+    },
+    content: {
+      padding: 20,
+      paddingBottom: 40,
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 25,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: palette.white,
+      borderRadius: 12,
+      padding: 15,
+      marginHorizontal: 5,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: palette.border,
+    },
+    highlightCard: {
+      borderColor: palette.primary,
+      backgroundColor: `${palette.primary}05`,
+    },
+    statNumber: {
+      ...typography.h1,
+      color: palette.textPrimary,
+      fontSize: 32,
+    },
+    highlightNumber: {
+      color: palette.primary,
+    },
+    statLabel: {
+      ...typography.caption,
+      color: palette.textPrimary,
+      fontWeight: '600',
+      marginTop: 5,
+    },
+    statSubLabel: {
+      ...typography.small,
+      color: palette.textSecondary,
+    },
+    alertsSection: {
+      marginBottom: 25,
+    },
+    sectionTitle: {
+      ...typography.h3,
+      color: palette.textPrimary,
+      marginBottom: 15,
+    },
+    alertCard: {
+      flexDirection: 'row',
+      backgroundColor: palette.white,
+      borderRadius: 12,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: palette.border,
+      overflow: 'hidden',
+    },
+    urgencyIndicator: {
+      width: 6,
+      height: '100%',
+    },
+    alertContent: {
+      flex: 1,
+      padding: 15,
+    },
+    alertHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 8,
+    },
+    alertTitle: {
+      ...typography.body,
+      color: palette.textPrimary,
+      fontWeight: '600',
+      flex: 1,
+      marginRight: 10,
+    },
+    urgencyBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    urgencyText: {
+      ...typography.small,
+      fontWeight: '600',
+    },
+    alertLocation: {
+      ...typography.caption,
+      color: palette.textSecondary,
+      marginBottom: 12,
+    },
+    alertMeta: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginBottom: 10,
+    },
+    metaItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: 15,
+      marginBottom: 5,
+    },
+    metaText: {
+      ...typography.small,
+      color: palette.textSecondary,
+      marginLeft: 4,
+    },
+    verificationBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      backgroundColor: `${palette.accent}20`,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 12,
+    },
+    verificationText: {
+      ...typography.small,
+      color: palette.accent,
+      marginLeft: 5,
+      fontWeight: '600',
+    },
+    mapSection: {
+      marginBottom: 25,
+    },
+    mapContainer: {
+      height: 200,
+      borderRadius: 12,
+      overflow: 'hidden',
+    },
+    map: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    heatPoint: {
+      borderRadius: 50,
+      opacity: 0.7,
+    },
+    chartSection: {
+      marginBottom: 25,
+    },
+    chart: {
+      marginVertical: 8,
+      borderRadius: 16,
+    },
+    legend: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginTop: 10,
+    },
+    legendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginHorizontal: 15,
+    },
+    legendDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      marginRight: 6,
+    },
+    legendText: {
+      ...typography.caption,
+      color: palette.textSecondary,
+    },
+    agencyInfo: {
+      marginBottom: 20,
+    },
+    infoGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginHorizontal: -5,
+    },
+    infoItem: {
+      width: '50%',
+      padding: 10,
+    },
+    infoLabel: {
+      ...typography.caption,
+      color: palette.textSecondary,
+      marginTop: 5,
+    },
+    infoValue: {
+      ...typography.body,
+      color: palette.textPrimary,
+      fontWeight: '600',
+    },
+  }));
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
   const [selectedTab, setSelectedTab] = useState('overview');
+  const locale = language === 'yo' ? 'yo-NG' : 'en-US';
 
   useEffect(() => {
     fetchDashboardData();
@@ -100,30 +362,32 @@ export default function AgencyDashboardScreen() {
     <View style={styles.statsContainer}>
       <View style={styles.statCard}>
         <Text style={styles.statNumber}>{dashboardData?.stats.total_reports.last_24h || 0}</Text>
-        <Text style={styles.statLabel}>Reports</Text>
-        <Text style={styles.statSubLabel}>Last 24h</Text>
+        <Text style={styles.statLabel}>{t('agency.statsReports')}</Text>
+        <Text style={styles.statSubLabel}>{t('agency.last24Hours')}</Text>
       </View>
 
       <View style={[styles.statCard, styles.highlightCard]}>
         <Text style={[styles.statNumber, styles.highlightNumber]}>
           {dashboardData?.stats.high_priority.last_24h || 0}
         </Text>
-        <Text style={styles.statLabel}>High Priority</Text>
-        <Text style={styles.statSubLabel}>Last 24h</Text>
+        <Text style={styles.statLabel}>{t('agency.statsHighPriority')}</Text>
+        <Text style={styles.statSubLabel}>{t('agency.last24Hours')}</Text>
       </View>
 
       <View style={styles.statCard}>
         <Text style={styles.statNumber}>{dashboardData?.stats.high_priority.pending || 0}</Text>
-        <Text style={styles.statLabel}>Pending</Text>
-        <Text style={styles.statSubLabel}>High Priority</Text>
+        <Text style={styles.statLabel}>{t('agency.statsPending')}</Text>
+        <Text style={styles.statSubLabel}>{t('agency.statsHighPriority')}</Text>
       </View>
     </View>
   );
 
   const renderAlerts = () => (
     <View style={styles.alertsSection}>
-      <Text style={styles.sectionTitle}>High Priority Alerts</Text>
-      {dashboardData?.alerts.map((alert) => (
+      <Text style={styles.sectionTitle}>{t('agency.highPriorityAlerts')}</Text>
+      {dashboardData?.alerts.map((alert) => {
+        const urgencyLabel = t(`agency.urgency.${alert.urgency}`);
+        return (
         <TouchableOpacity key={alert.id} style={styles.alertCard}>
           <View style={[
             styles.urgencyIndicator,
@@ -140,38 +404,39 @@ export default function AgencyDashboardScreen() {
                   styles.urgencyText,
                   { color: alert.urgency === 'critical' ? colors.secondary : colors.warning }
                 ]}>
-                  {alert.urgency.toUpperCase()}
+                  {urgencyLabel.toUpperCase()}
                 </Text>
               </View>
             </View>
             <Text style={styles.alertLocation}>{alert.location}</Text>
             <View style={styles.alertMeta}>
               <View style={styles.metaItem}>
-                <Icon name="map-marker-distance" size={14} color={colors.neutralMedium} />
-                <Text style={styles.metaText}>{alert.distance}km away</Text>
+                <Icon name="map-marker-distance" size={14} color={colors.textSecondary} />
+                <Text style={styles.metaText}>{t('agency.kmAway', { count: alert.distance })}</Text>
               </View>
               <View style={styles.metaItem}>
-                <Icon name="clock-outline" size={14} color={colors.neutralMedium} />
+                <Icon name="clock-outline" size={14} color={colors.textSecondary} />
                 <Text style={styles.metaText}>{alert.time_ago}</Text>
               </View>
               <View style={styles.metaItem}>
-                <Icon name="account-group" size={14} color={colors.neutralMedium} />
-                <Text style={styles.metaText}>{alert.confirmations} confirmations</Text>
+                <Icon name="account-group" size={14} color={colors.textSecondary} />
+                <Text style={styles.metaText}>{t('agency.confirmations', { count: alert.confirmations })}</Text>
               </View>
             </View>
             <View style={styles.verificationBadge}>
               <Icon name="shield-check" size={14} color={colors.accent} />
-              <Text style={styles.verificationText}>{alert.verification_score}% verified</Text>
+              <Text style={styles.verificationText}>{t('agency.verifiedPercent', { count: alert.verification_score })}</Text>
             </View>
           </View>
         </TouchableOpacity>
-      ))}
+        );
+      })}
     </View>
   );
 
   const renderHeatMap = () => (
     <View style={styles.mapSection}>
-      <Text style={styles.sectionTitle}>Incident Heat Map</Text>
+      <Text style={styles.sectionTitle}>{t('agency.heatMapTitle')}</Text>
       <View style={styles.mapContainer}>
         <MapView
           style={styles.map}
@@ -186,7 +451,7 @@ export default function AgencyDashboardScreen() {
             <Marker
               key={index}
               coordinate={{ latitude: point.lat, longitude: point.lng }}
-              title={`${point.intensity} reports`}
+              title={t('agency.reportCount', { count: point.intensity })}
             >
               <View style={[
                 styles.heatPoint,
@@ -209,14 +474,14 @@ export default function AgencyDashboardScreen() {
     if (!dashboardData?.trends) return null;
 
     const labels = dashboardData.trends.map(t => 
-      new Date(t.date).toLocaleDateString('en-US', { weekday: 'short' })
+      new Date(t.date).toLocaleDateString(locale, { weekday: 'short' })
     );
     const reportsData = dashboardData.trends.map(t => t.reports);
     const resolvedData = dashboardData.trends.map(t => t.resolved);
 
     return (
       <View style={styles.chartSection}>
-        <Text style={styles.sectionTitle}>7-Day Trends</Text>
+        <Text style={styles.sectionTitle}>{t('agency.trendsTitle')}</Text>
         <LineChart
           data={{
             labels,
@@ -240,8 +505,8 @@ export default function AgencyDashboardScreen() {
             backgroundGradientFrom: colors.white,
             backgroundGradientTo: colors.white,
             decimalPlaces: 0,
-            color: (opacity = 1) => colors.neutralMedium,
-            labelColor: (opacity = 1) => colors.neutralDark,
+            color: (opacity = 1) => colors.textSecondary,
+            labelColor: (opacity = 1) => colors.textPrimary,
             style: {
               borderRadius: 16,
             },
@@ -257,11 +522,11 @@ export default function AgencyDashboardScreen() {
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
-            <Text style={styles.legendText}>Total Reports</Text>
+            <Text style={styles.legendText}>{t('agency.legendTotal')}</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: colors.accent }]} />
-            <Text style={styles.legendText}>Resolved</Text>
+            <Text style={styles.legendText}>{t('agency.legendResolved')}</Text>
           </View>
         </View>
       </View>
@@ -273,7 +538,7 @@ export default function AgencyDashboardScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading Dashboard...</Text>
+          <Text style={styles.loadingText}>{t('agency.loadingDashboard')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -282,32 +547,37 @@ export default function AgencyDashboardScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Agency Dashboard</Text>
+        <Text style={styles.headerTitle}>{t('agency.dashboardTitle')}</Text>
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.headerButton}>
-            <Icon name="export" size={20} color={colors.neutralDark} />
-            <Text style={styles.headerButtonText}>Export</Text>
+            <Icon name="export" size={20} color={colors.textPrimary} />
+            <Text style={styles.headerButtonText}>{t('agency.export')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerButton}>
-            <Icon name="cog" size={20} color={colors.neutralDark} />
+            <Icon name="cog" size={20} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.tabs}>
-        {['overview', 'analytics', 'reports', 'settings'].map((tab) => (
+        {[
+          { key: 'overview', label: t('agency.tabs.overview') },
+          { key: 'analytics', label: t('agency.tabs.analytics') },
+          { key: 'reports', label: t('agency.tabs.reports') },
+          { key: 'settings', label: t('agency.tabs.settings') },
+        ].map((tab) => (
           <TouchableOpacity
-            key={tab}
+            key={tab.key}
             style={[
               styles.tab,
-              selectedTab === tab && styles.tabActive,
+              selectedTab === tab.key && styles.tabActive,
             ]}
-            onPress={() => setSelectedTab(tab)}>
+            onPress={() => setSelectedTab(tab.key)}>
             <Text style={[
               styles.tabText,
-              selectedTab === tab && styles.tabTextActive,
+              selectedTab === tab.key && styles.tabTextActive,
             ]}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab.label}
             </Text>
           </TouchableOpacity>
         ))}
@@ -320,27 +590,27 @@ export default function AgencyDashboardScreen() {
         {renderTrendsChart()}
 
         <View style={styles.agencyInfo}>
-          <Text style={styles.sectionTitle}>Agency Information</Text>
+          <Text style={styles.sectionTitle}>{t('agency.infoTitle')}</Text>
           <View style={styles.infoGrid}>
             <View style={styles.infoItem}>
               <Icon name="office-building" size={24} color={colors.primary} />
-              <Text style={styles.infoLabel}>Name</Text>
+              <Text style={styles.infoLabel}>{t('agency.infoName')}</Text>
               <Text style={styles.infoValue}>{dashboardData?.agency.name}</Text>
             </View>
             <View style={styles.infoItem}>
               <Icon name="map-marker-radius" size={24} color={colors.primary} />
-              <Text style={styles.infoLabel}>Jurisdiction</Text>
+              <Text style={styles.infoLabel}>{t('agency.infoJurisdiction')}</Text>
               <Text style={styles.infoValue}>{dashboardData?.agency.jurisdiction}</Text>
             </View>
             <View style={styles.infoItem}>
               <Icon name="account-check" size={24} color={colors.primary} />
-              <Text style={styles.infoLabel}>Verified Users</Text>
+              <Text style={styles.infoLabel}>{t('agency.infoVerifiedUsers')}</Text>
               <Text style={styles.infoValue}>{dashboardData?.agency.verified_users}</Text>
             </View>
             <View style={styles.infoItem}>
               <Icon name="timer" size={24} color={colors.primary} />
-              <Text style={styles.infoLabel}>Avg. Response</Text>
-              <Text style={styles.infoValue}>{dashboardData?.stats.response_time.average}m</Text>
+              <Text style={styles.infoLabel}>{t('agency.infoAvgResponse')}</Text>
+              <Text style={styles.infoValue}>{t('agency.minutesValue', { count: dashboardData?.stats.response_time.average })}</Text>
             </View>
           </View>
         </View>
@@ -348,259 +618,3 @@ export default function AgencyDashboardScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    ...typography.body,
-    color: colors.neutralMedium,
-    marginTop: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutralLight,
-  },
-  headerTitle: {
-    ...typography.h2,
-    color: colors.neutralDark,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 15,
-  },
-  headerButtonText: {
-    ...typography.caption,
-    color: colors.neutralDark,
-    marginLeft: 5,
-  },
-  tabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutralLight,
-  },
-  tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 10,
-    borderRadius: 20,
-  },
-  tabActive: {
-    backgroundColor: colors.primary,
-  },
-  tabText: {
-    ...typography.caption,
-    color: colors.neutralMedium,
-    fontWeight: '500',
-  },
-  tabTextActive: {
-    color: colors.white,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 25,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 15,
-    marginHorizontal: 5,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.neutralLight,
-  },
-  highlightCard: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}05`,
-  },
-  statNumber: {
-    ...typography.h1,
-    color: colors.neutralDark,
-    fontSize: 32,
-  },
-  highlightNumber: {
-    color: colors.primary,
-  },
-  statLabel: {
-    ...typography.caption,
-    color: colors.neutralDark,
-    fontWeight: '600',
-    marginTop: 5,
-  },
-  statSubLabel: {
-    ...typography.small,
-    color: colors.neutralMedium,
-  },
-  alertsSection: {
-    marginBottom: 25,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.neutralDark,
-    marginBottom: 15,
-  },
-  alertCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.neutralLight,
-    overflow: 'hidden',
-  },
-  urgencyIndicator: {
-    width: 6,
-    height: '100%',
-  },
-  alertContent: {
-    flex: 1,
-    padding: 15,
-  },
-  alertHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  alertTitle: {
-    ...typography.body,
-    color: colors.neutralDark,
-    fontWeight: '600',
-    flex: 1,
-    marginRight: 10,
-  },
-  urgencyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  urgencyText: {
-    ...typography.small,
-    fontWeight: '600',
-  },
-  alertLocation: {
-    ...typography.caption,
-    color: colors.neutralMedium,
-    marginBottom: 12,
-  },
-  alertMeta: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 10,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 15,
-    marginBottom: 5,
-  },
-  metaText: {
-    ...typography.small,
-    color: colors.neutralMedium,
-    marginLeft: 4,
-  },
-  verificationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: `${colors.accent}20`,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  verificationText: {
-    ...typography.small,
-    color: colors.accent,
-    marginLeft: 5,
-    fontWeight: '600',
-  },
-  mapSection: {
-    marginBottom: 25,
-  },
-  mapContainer: {
-    height: 200,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  heatPoint: {
-    borderRadius: 50,
-    opacity: 0.7,
-  },
-  chartSection: {
-    marginBottom: 25,
-  },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 16,
-  },
-  legend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 15,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 6,
-  },
-  legendText: {
-    ...typography.caption,
-    color: colors.neutralMedium,
-  },
-  agencyInfo: {
-    marginBottom: 20,
-  },
-  infoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -5,
-  },
-  infoItem: {
-    width: '50%',
-    padding: 10,
-  },
-  infoLabel: {
-    ...typography.caption,
-    color: colors.neutralMedium,
-    marginTop: 5,
-  },
-  infoValue: {
-    ...typography.body,
-    color: colors.neutralDark,
-    fontWeight: '600',
-  },
-});

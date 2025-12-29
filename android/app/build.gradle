@@ -99,6 +99,7 @@ def loadKeyValueFile = { File file ->
 // Prefer local, untracked properties for secrets.
 loadKeyValueFile(rootProject.file("local.properties"))
 loadKeyValueFile(rootProject.file(".env.development"))
+loadKeyValueFile(rootProject.file("../.env.development"))
 
 android {
     ndkVersion rootProject.ext.ndkVersion

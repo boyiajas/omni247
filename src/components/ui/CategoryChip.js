@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { colors, typography, spacing } from '../../theme';
+import { typography, spacing } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { REPORT_CATEGORIES } from '../../utils/constants';
 
 const CategoryChip = ({
@@ -10,6 +11,29 @@ const CategoryChip = ({
     onPress,
     style,
 }) => {
+    const { theme } = useTheme();
+    const colors = theme.colors;
+    const styles = useMemo(() => StyleSheet.create({
+        chip: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.sm,
+            borderRadius: 20,
+            borderWidth: 2,
+            marginRight: spacing.sm,
+            marginBottom: spacing.sm,
+        },
+        icon: {
+            marginRight: spacing.xs,
+        },
+        text: {
+            fontSize: typography.sizes.sm,
+            fontWeight: typography.weights.semibold,
+            fontFamily: typography.families.semibold,
+        },
+    }), [colors]);
+
     const categoryData = REPORT_CATEGORIES[category.toUpperCase()];
 
     if (!categoryData) return null;
@@ -40,26 +64,5 @@ const CategoryChip = ({
         </TouchableOpacity>
     );
 };
-
-const styles = StyleSheet.create({
-    chip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        borderRadius: 20,
-        borderWidth: 2,
-        marginRight: spacing.sm,
-        marginBottom: spacing.sm,
-    },
-    icon: {
-        marginRight: spacing.xs,
-    },
-    text: {
-        fontSize: typography.sizes.sm,
-        fontWeight: typography.weights.semibold,
-        fontFamily: typography.families.semibold,
-    },
-});
 
 export default CategoryChip;

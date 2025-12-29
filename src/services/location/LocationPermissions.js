@@ -26,7 +26,7 @@ class LocationPermissions {
                     PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
                     {
                         title: 'Location Permission',
-                        message: 'G-iReport needs access to your location to show nearby incidents',
+                        message: 'Omni247 needs access to your location to show nearby incidents',
                         buttonPositive: 'OK',
                     }
                 );
@@ -48,7 +48,7 @@ class LocationPermissions {
                     PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
                     {
                         title: 'Background Location Permission',
-                        message: 'Allow G-iReport to access location in the background for alerts',
+                        message: 'Allow Omni247 to access location in the background for alerts',
                         buttonPositive: 'OK',
                     }
                 );

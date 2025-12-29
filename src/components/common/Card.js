@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, spacing, shadows } from '../../theme';
+import { spacing, shadows } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const Card = ({
     children,
@@ -9,6 +10,19 @@ const Card = ({
     elevated = true,
     padding = true,
 }) => {
+    const { theme } = useTheme();
+    const colors = theme.colors;
+    const styles = useMemo(() => StyleSheet.create({
+        card: {
+            backgroundColor: colors.white,
+            borderRadius: 16,
+            padding: spacing.md,
+            marginBottom: spacing.md,
+        },
+        noPadding: {
+            padding: 0,
+        },
+    }), [colors]);
     const cardStyles = [
         styles.card,
         elevated && shadows.medium,
@@ -29,17 +43,5 @@ const Card = ({
 
     return <View style={cardStyles}>{children}</View>;
 };
-
-const styles = StyleSheet.create({
-    card: {
-        backgroundColor: colors.white,
-        borderRadius: 16,
-        padding: spacing.md,
-        marginBottom: spacing.md,
-    },
-    noPadding: {
-        padding: 0,
-    },
-});
 
 export default Card;

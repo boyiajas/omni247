@@ -8,8 +8,8 @@
     <div class="banner-container">
       <div class="banner-content">
         <div class="banner-text">
-          <h2 class="banner-title">Join Our Community</h2>
-          <p class="banner-subtitle">Report incidents, track issues, and make your city safer</p>
+          <h2 class="banner-title">Get the Omni247 mobile app</h2>
+          <p class="banner-subtitle">Submit verified reports with media and receive alerts where you are.</p>
         </div>
         
         <div class="banner-stats">
@@ -28,7 +28,7 @@
         </div>
         
         <div class="banner-cta">
-          <a href="#news" class="btn btn-primary">Get Started</a>
+          <a href="#news" class="btn btn-primary">Browse Reports</a>
           <a href="/client-login" class="btn btn-outline">Client Portal</a>
         </div>
       </div>

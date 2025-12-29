@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     Modal as RNModal,
     View,
@@ -8,7 +8,8 @@ import {
     Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { colors, typography, spacing, shadows } from '../../theme';
+import { typography, spacing, shadows } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -22,6 +23,51 @@ const Modal = ({
     transparent = true,
     fullScreen = false,
 }) => {
+    const { theme } = useTheme();
+    const colors = theme.colors;
+    const styles = useMemo(() => StyleSheet.create({
+        overlay: {
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        modal: {
+            backgroundColor: colors.white,
+            borderRadius: 16,
+            width: width * 0.9,
+            maxHeight: '80%',
+            ...shadows.large,
+        },
+        modalFullScreen: {
+            width: '100%',
+            height: '100%',
+            borderRadius: 0,
+            maxHeight: '100%',
+        },
+        header: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: spacing.md,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+        },
+        title: {
+            fontSize: typography.sizes.lg,
+            fontWeight: typography.weights.bold,
+            color: colors.textPrimary,
+            fontFamily: typography.families.bold,
+            flex: 1,
+        },
+        closeButton: {
+            padding: spacing.xs,
+        },
+        content: {
+            padding: spacing.md,
+        },
+    }), [colors]);
+
     return (
         <RNModal
             visible={visible}
@@ -48,48 +94,5 @@ const Modal = ({
         </RNModal>
     );
 };
-
-const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modal: {
-        backgroundColor: colors.white,
-        borderRadius: 16,
-        width: width * 0.9,
-        maxHeight: '80%',
-        ...shadows.large,
-    },
-    modalFullScreen: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 0,
-        maxHeight: '100%',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-    },
-    title: {
-        fontSize: typography.sizes.lg,
-        fontWeight: typography.weights.bold,
-        color: colors.textPrimary,
-        fontFamily: typography.families.bold,
-        flex: 1,
-    },
-    closeButton: {
-        padding: spacing.xs,
-    },
-    content: {
-        padding: spacing.md,
-    },
-});
 
 export default Modal;

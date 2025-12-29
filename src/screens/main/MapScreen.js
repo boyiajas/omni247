@@ -13,11 +13,13 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { colors, typography, categoryColors } from '../../theme/colors';
+import { colors as baseColors, typography, categoryColors } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AuthContext } from '../../contexts/AuthContext';
 import { NotificationContext } from '../../contexts/NotificationContext';
 import { LocationContext } from '../../contexts/LocationContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import categoriesAPI from '../../services/api/categories';
 import { reportsAPI } from '../../services/api/reports';
 import GeocodingService from '../../services/location/GeocodingService';
@@ -34,7 +36,7 @@ const FALLBACK_CATEGORIES = [
   { backendId: 7, slug: 'other', label: 'Other', icon: 'alert-circle', color: categoryColors.other },
 ];
 
-const normalizeCategory = (category) => {
+const normalizeCategory = (category, palette) => {
   if (!category) return null;
   const slug = category.slug || category.label || String(category.backendId || category.id);
   return {
@@ -44,7 +46,7 @@ const normalizeCategory = (category) => {
     label: category.name || category.label,
     name: category.name || category.label,
     icon: category.icon || 'alert-circle',
-    color: category.color || categoryColors[slug] || colors.primary,
+    color: category.color || categoryColors[slug] || palette.primary,
     description: category.description,
     isEmergency: Boolean(category.is_emergency || category.isEmergency),
     isActive: category.is_active !== false && category.isActive !== false,
@@ -63,6 +65,7 @@ const initialRegion = {
 class MapScreenContent extends React.Component {
   constructor(props) {
     super(props);
+    const palette = props.themeColors || baseColors;
     this.mapRef = React.createRef();
     this.addressRequestId = 0;
     this.slideAnim = new Animated.Value(0);
@@ -80,7 +83,7 @@ class MapScreenContent extends React.Component {
       currentAddress: '',
       hasShownLocationError: false,
       legendExpanded: true,
-      categories: FALLBACK_CATEGORIES.map(normalizeCategory).filter(Boolean),
+      categories: FALLBACK_CATEGORIES.map((category) => normalizeCategory(category, palette)).filter(Boolean),
       reports: [],
       isLoadingReports: false,
       viewMode: 'nearby',
@@ -136,7 +139,8 @@ class MapScreenContent extends React.Component {
     const prevError = prevProps.locationContext?.error;
     const nextError = this.props.locationContext?.error;
     if (nextError && nextError !== prevError && !this.state.hasShownLocationError) {
-      Alert.alert('Location', nextError);
+      const { t } = this.props;
+      Alert.alert(t('map.locationAlertTitle'), nextError);
       this.setState({ hasShownLocationError: true });
     }
   }
@@ -146,8 +150,9 @@ class MapScreenContent extends React.Component {
       const response = await categoriesAPI.getCategories();
       const list = Array.isArray(response.data?.data) ? response.data.data : response.data;
       if (Array.isArray(list) && list.length) {
+        const palette = this.props.themeColors || baseColors;
         const normalized = list
-          .map(normalizeCategory)
+          .map((category) => normalizeCategory(category, palette))
           .filter(Boolean)
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         if (normalized.length) {
@@ -422,6 +427,9 @@ class MapScreenContent extends React.Component {
 
   render() {
     const { navigation, authContext, notificationContext, locationContext } = this.props;
+    const palette = this.props.themeColors || baseColors;
+    const colors = palette;
+    const styles = getStyles(palette);
     const user = authContext?.user;
     const unreadCount = notificationContext?.unreadCount ?? 0;
     const realtimeStatus = notificationContext?.realtimeStatus;
@@ -431,16 +439,17 @@ class MapScreenContent extends React.Component {
     const fallbackLabel =
       user?.location_summary
       || [user?.last_known_city, user?.last_known_country].filter(Boolean).join(', ');
-    let locationLabel = this.state.currentAddress || fallbackLabel || 'Unknown location';
+    const { t } = this.props;
+    let locationLabel = this.state.currentAddress || fallbackLabel || t('map.locationUnknown');
 
     if (this.state.viewMode === 'global') {
-      locationLabel = 'Global trends';
+      locationLabel = t('map.locationGlobal');
     } else if (this.state.viewMode === 'country') {
       locationLabel = user?.last_known_country
-        ? `Country: ${user.last_known_country}`
-        : 'My country trends';
+        ? t('map.locationCountryPrefix', { country: user.last_known_country })
+        : t('map.locationCountryFallback');
     } else if (this.state.viewMode === 'nearby') {
-      locationLabel = this.state.currentAddress || fallbackLabel || 'Current location';
+      locationLabel = this.state.currentAddress || fallbackLabel || t('map.locationCurrent');
     }
 
     const reportList = this.getReportList();
@@ -492,15 +501,15 @@ class MapScreenContent extends React.Component {
         <SafeAreaView style={styles.container}>
           <View style={styles.errorCard}>
             <Icon name="map-marker-off" size={28} color={colors.primary} />
-            <Text style={styles.errorTitle}>Map temporarily unavailable</Text>
+            <Text style={styles.errorTitle}>{t('map.mapUnavailableTitle')}</Text>
             <Text style={styles.errorText}>
-              We couldn't load the map right now. You can still report incidents and browse alerts.
+              {t('map.mapUnavailableBody')}
             </Text>
             <TouchableOpacity
               style={styles.retryButton}
               onPress={() => this.setState({ hasMapError: false })}
             >
-              <Text style={styles.retryButtonText}>Try Again</Text>
+              <Text style={styles.retryButtonText}>{t('map.mapRetry')}</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -510,13 +519,13 @@ class MapScreenContent extends React.Component {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Global Eye</Text>
+          <Text style={styles.headerTitle}>{t('map.headerTitle')}</Text>
           <View style={styles.notificationWrap}>
             <TouchableOpacity
               style={styles.notificationButton}
               onPress={() => navigation.navigate('Notifications')}
             >
-              <Icon name="bell-outline" size={24} color={colors.neutralDark} />
+              <Icon name="bell-outline" size={24} color={colors.textPrimary} />
               {unreadCount > 0 && (
                 <View style={styles.notificationBadge}>
                   <Text style={styles.notificationBadgeText}>
@@ -527,7 +536,7 @@ class MapScreenContent extends React.Component {
             </TouchableOpacity>
             <View style={styles.liveRow}>
               <View style={[styles.liveDot, isLive ? styles.liveDotOn : styles.liveDotOff]} />
-              <Text style={styles.liveText}>Live</Text>
+              <Text style={styles.liveText}>{t('map.live')}</Text>
             </View>
           </View>
         </View>
@@ -582,18 +591,18 @@ class MapScreenContent extends React.Component {
             onPress={this.toggleViewMenu}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Icon name="menu" size={24} color={colors.neutralDark} />
+            <Icon name="menu" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
 
           <View style={styles.zoomControls}>
             <TouchableOpacity style={styles.zoomButton} onPress={this.handleZoomIn}>
-              <Icon name="plus" size={18} color={colors.neutralDark} />
+              <Icon name="plus" size={18} color={colors.textPrimary} />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.zoomButton, { borderBottomWidth: 0 }]}
               onPress={this.handleZoomOut}
             >
-              <Icon name="minus" size={18} color={colors.neutralDark} />
+              <Icon name="minus" size={18} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -614,7 +623,7 @@ class MapScreenContent extends React.Component {
               <Icon
                 name="earth"
                 size={20}
-                color={this.state.selectedCategory === null ? colors.white : colors.neutralMedium}
+                color={this.state.selectedCategory === null ? colors.white : colors.textSecondary}
               />
               <Text
                 style={[
@@ -622,7 +631,7 @@ class MapScreenContent extends React.Component {
                   this.state.selectedCategory === null && styles.categoryButtonTextActive,
                 ]}
               >
-                All
+                {t('map.categoryAll')}
               </Text>
             </TouchableOpacity>
 
@@ -642,7 +651,7 @@ class MapScreenContent extends React.Component {
                   color={
                     this.state.selectedCategory === category.slug
                       ? colors.white
-                      : colors.neutralMedium
+                      : colors.textSecondary
                   }
                 />
                 <Text
@@ -651,7 +660,21 @@ class MapScreenContent extends React.Component {
                     this.state.selectedCategory === category.slug && styles.categoryButtonTextActive,
                   ]}
                 >
-                  {category.label}
+                  {category.slug === 'crime'
+                    ? t('map.fallbackCategories.crime')
+                    : category.slug === 'accident'
+                      ? t('map.fallbackCategories.accidents')
+                      : category.slug === 'event'
+                        ? t('map.fallbackCategories.events')
+                        : category.slug === 'environment'
+                          ? t('map.fallbackCategories.environment')
+                          : category.slug === 'politics'
+                            ? t('map.fallbackCategories.politics')
+                            : category.slug === 'infrastructure'
+                              ? t('map.fallbackCategories.infrastructure')
+                              : category.slug === 'other'
+                                ? t('map.fallbackCategories.other')
+                                : category.label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -660,29 +683,29 @@ class MapScreenContent extends React.Component {
 
         <TouchableOpacity style={styles.reportButton} onPress={() => navigation.navigate('ReportFlow')}>
           <Icon name="plus" size={24} color={colors.white} />
-          <Text style={styles.reportButtonText}>Report Incident</Text>
+          <Text style={styles.reportButtonText}>{t('map.reportIncident')}</Text>
         </TouchableOpacity>
 
         {this.state.legendExpanded ? (
           <View style={styles.legend}>
             <View style={styles.legendHeader}>
-              <Text style={styles.legendTitle}>Map Legend:</Text>
+              <Text style={styles.legendTitle}>{t('map.legendTitle')}</Text>
               <TouchableOpacity onPress={() => this.toggleLegend(false)}>
-                <Icon name="close" size={20} color={colors.neutralDark} />
+                <Icon name="close" size={20} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
             <View style={styles.legendItems}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: categoryColors.crime }]} />
-                <Text style={styles.legendText}>Crime/Emergency</Text>
+                <Text style={styles.legendText}>{t('map.legendCrime')}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: categoryColors.event }]} />
-                <Text style={styles.legendText}>Celebrations/Events</Text>
+                <Text style={styles.legendText}>{t('map.legendEvents')}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: categoryColors.environment }]} />
-                <Text style={styles.legendText}>Environment</Text>
+                <Text style={styles.legendText}>{t('map.legendEnvironment')}</Text>
               </View>
             </View>
           </View>
@@ -717,7 +740,7 @@ class MapScreenContent extends React.Component {
                   ]}
                 >
                   <View style={styles.drawerHandle} />
-                  <Text style={styles.drawerTitle}>Select View Mode</Text>
+                  <Text style={styles.drawerTitle}>{t('map.drawerTitle')}</Text>
 
                   <TouchableOpacity
                     style={styles.drawerMenuItem}
@@ -727,8 +750,8 @@ class MapScreenContent extends React.Component {
                       <Icon name="earth" size={22} color={colors.primary} />
                     </View>
                     <View style={styles.drawerMenuTextWrap}>
-                      <Text style={styles.drawerMenuText}>Global trends</Text>
-                      <Text style={styles.drawerMenuSubtext}>View trending reports worldwide</Text>
+                      <Text style={styles.drawerMenuText}>{t('map.viewGlobalTitle')}</Text>
+                      <Text style={styles.drawerMenuSubtext}>{t('map.viewGlobalSubtitle')}</Text>
                     </View>
                   </TouchableOpacity>
 
@@ -740,8 +763,8 @@ class MapScreenContent extends React.Component {
                       <Icon name="flag" size={22} color={colors.primary} />
                     </View>
                     <View style={styles.drawerMenuTextWrap}>
-                      <Text style={styles.drawerMenuText}>My country</Text>
-                      <Text style={styles.drawerMenuSubtext}>Trending incidents in your country</Text>
+                      <Text style={styles.drawerMenuText}>{t('map.viewCountryTitle')}</Text>
+                      <Text style={styles.drawerMenuSubtext}>{t('map.viewCountrySubtitle')}</Text>
                     </View>
                   </TouchableOpacity>
 
@@ -753,8 +776,8 @@ class MapScreenContent extends React.Component {
                       <Icon name="crosshairs-gps" size={22} color={colors.primary} />
                     </View>
                     <View style={styles.drawerMenuTextWrap}>
-                      <Text style={styles.drawerMenuText}>Current location</Text>
-                      <Text style={styles.drawerMenuSubtext}>Incidents near you (25km radius)</Text>
+                      <Text style={styles.drawerMenuText}>{t('map.viewNearbyTitle')}</Text>
+                      <Text style={styles.drawerMenuSubtext}>{t('map.viewNearbySubtitle')}</Text>
                     </View>
                   </TouchableOpacity>
                 </Animated.View>
@@ -767,30 +790,37 @@ class MapScreenContent extends React.Component {
   }
 }
 
-const MapScreen = (props) => (
-  <AuthContext.Consumer>
-    {(authContext) => (
-      <NotificationContext.Consumer>
-        {(notificationContext) => (
-          <LocationContext.Consumer>
-            {(locationContext) => (
-              <MapScreenContent
-                {...props}
-                authContext={authContext}
-                notificationContext={notificationContext}
-                locationContext={locationContext}
-              />
-            )}
-          </LocationContext.Consumer>
-        )}
-      </NotificationContext.Consumer>
-    )}
-  </AuthContext.Consumer>
-);
+const MapScreen = (props) => {
+  const { t } = useLanguage();
+  const { theme } = useTheme();
+  const colors = theme.colors;
+  return (
+    <AuthContext.Consumer>
+      {(authContext) => (
+        <NotificationContext.Consumer>
+          {(notificationContext) => (
+            <LocationContext.Consumer>
+              {(locationContext) => (
+                <MapScreenContent
+                  {...props}
+                  authContext={authContext}
+                  notificationContext={notificationContext}
+                  locationContext={locationContext}
+                  t={t}
+                  themeColors={colors}
+                />
+              )}
+            </LocationContext.Consumer>
+          )}
+        </NotificationContext.Consumer>
+      )}
+    </AuthContext.Consumer>
+  );
+};
 
 export default MapScreen;
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -940,7 +970,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     marginBottom: 8,
-    backgroundColor: colors.neutralLighter,
+    backgroundColor: colors.neutralLight,
   },
   drawerMenuIconWrap: {
     width: 48,

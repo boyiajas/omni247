@@ -20,13 +20,13 @@
 <script setup>
 import { ref } from 'vue';
 
-const activeCategory = ref('trending');
+const activeCategory = ref('featured');
 
 const categories = [
+  { id: 'featured', title: 'Featured', link: '#featured' },
   { id: 'trending', title: 'Trending', link: '#trending' },
-  { id: 'high-priority', title: 'High Priority', link: '#high-priority' },
-  { id: 'news', title: 'News', link: '#news' },
-  { id: 'positive', title: 'Positive', link: '#positive' },
+  { id: 'news', title: 'Latest', link: '#news' },
+  { id: 'features', title: 'Features', link: '#features' },
 ];
 
 const handleCategoryClick = (category, event) => {
@@ -42,7 +42,7 @@ const handleCategoryClick = (category, event) => {
   border-bottom: 1px solid #e2e8f0;
   padding: 0;
   position: sticky;
-  top: 0;
+  top: 64px;
   z-index: 100;
 }
 
@@ -113,6 +113,9 @@ const handleCategoryClick = (category, event) => {
   .story-link {
     padding: 8px 20px;
     font-size: 13px;
+  }
+  .top-stories-bar {
+    top: 56px;
   }
 }
 </style>

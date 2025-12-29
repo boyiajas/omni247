@@ -1,13 +1,23 @@
 import ApiClient from './ApiClient';
 import config from '../../config/api';
+import { getDeviceInfo } from '../../utils/deviceInfo';
 
 export const authAPI = {
     login: async (email, password) => {
-        return ApiClient.post(config.ENDPOINTS.LOGIN, { email, password });
+        const deviceInfo = await getDeviceInfo();
+        return ApiClient.post(config.ENDPOINTS.LOGIN, {
+            email,
+            password,
+            ...deviceInfo
+        });
     },
 
     register: async (userData) => {
-        return ApiClient.post(config.ENDPOINTS.REGISTER, userData);
+        const deviceInfo = await getDeviceInfo();
+        return ApiClient.post(config.ENDPOINTS.REGISTER, {
+            ...userData,
+            ...deviceInfo
+        });
     },
 
     logout: async () => {
@@ -48,5 +58,21 @@ export const authAPI = {
 
     updateNotificationSettings: async (data) => {
         return ApiClient.put(config.ENDPOINTS.NOTIFICATION_SETTINGS, data);
+    },
+
+    getLanguageSettings: async () => {
+        return ApiClient.get(config.ENDPOINTS.LANGUAGE_SETTINGS);
+    },
+
+    updateLanguageSettings: async (data) => {
+        return ApiClient.put(config.ENDPOINTS.LANGUAGE_SETTINGS, data);
+    },
+
+    getThemeSettings: async () => {
+        return ApiClient.get(config.ENDPOINTS.THEME_SETTINGS);
+    },
+
+    updateThemeSettings: async (data) => {
+        return ApiClient.put(config.ENDPOINTS.THEME_SETTINGS, data);
     },
 };

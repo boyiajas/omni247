@@ -1,13 +1,16 @@
 <template>
   <div class="landing-page">
     <LandingHeader />
+    <HeroSection :stats="stats" />
     <TopStoriesBar />
     <FeaturedSection />
     <TrendingSection />
     <CategoryBar :categories="categories" @category-change="handleCategoryChange" />
     <NewsGrid :reports="reports" :loading="loading" />
-    <CTABanner :stats="stats" />
     <FeaturesSection />
+    <AboutSection />
+    <CTABanner :stats="stats" />
+    <ContactSection />
     <LandingFooter />
   </div>
 </template>
@@ -15,6 +18,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import LandingHeader from '../components/LandingHeader.vue';
+import HeroSection from '../components/HeroSection.vue';
 import TopStoriesBar from '../components/TopStoriesBar.vue';
 import FeaturedSection from '../components/FeaturedSection.vue';
 import TrendingSection from '../components/TrendingSection.vue';
@@ -22,6 +26,8 @@ import CategoryBar from '../components/CategoryBar.vue';
 import NewsGrid from '../components/NewsGrid.vue';
 import FeaturesSection from '../components/FeaturesSection.vue';
 import CTABanner from '../components/CTABanner.vue';
+import AboutSection from '../components/AboutSection.vue';
+import ContactSection from '../components/ContactSection.vue';
 import LandingFooter from '../components/LandingFooter.vue';
 
 const stats = ref({});

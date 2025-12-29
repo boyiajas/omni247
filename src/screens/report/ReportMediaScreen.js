@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   SafeAreaView,
   Image,
@@ -14,20 +13,157 @@ import {
   TextInput,
   KeyboardAvoidingView,
 } from 'react-native';
-import { colors, typography } from '../../theme/colors';
+import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import Geolocation from 'react-native-geolocation-service';
 import GeocodingService from '../../services/location/GeocodingService';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import useThemedStyles from '../../theme/useThemedStyles';
 
 export default function ReportMediaScreen({ route, navigation }) {
   const { category } = route.params || {};
+  const { t } = useLanguage();
+  const { theme } = useTheme();
+  const colors = theme.colors;
+  const styles = useThemedStyles((palette) => ({
+    container: { flex: 1, backgroundColor: palette.background },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.border,
+    },
+    headerTitle: { ...typography.h3, color: palette.textPrimary },
+    locationContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: palette.neutralLight,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    locationText: { ...typography.caption, color: palette.textPrimary, marginLeft: 8, flex: 1 },
+    locationRight: { marginLeft: 10 },
+    content: { padding: 20, paddingBottom: 100 },
+    emptyMediaContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+    emptyMediaText: { ...typography.h3, color: palette.textSecondary, marginTop: 20, marginBottom: 10 },
+    emptyMediaSubtext: { ...typography.body, color: palette.textSecondary, textAlign: 'center', lineHeight: 22 },
+    mediaGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 30 },
+    mediaItem: { width: '48%', aspectRatio: 1, marginBottom: '4%', marginRight: '4%', position: 'relative' },
+    mediaImage: { width: '100%', height: '100%', borderRadius: 12 },
+    removeButton: { position: 'absolute', top: -8, right: -8, backgroundColor: palette.white, borderRadius: 12 },
+    videoIndicator: {
+      position: 'absolute',
+      bottom: 10,
+      right: 10,
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    mediaOptions: { marginBottom: 30 },
+    sectionTitle: { ...typography.body, color: palette.textPrimary, fontWeight: '600', marginBottom: 15 },
+    captureButtons: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+    captureButton: { alignItems: 'center', backgroundColor: palette.neutralLight, padding: 14, borderRadius: 12, width: '31%' },
+    recordingButton: { backgroundColor: `${palette.secondary}20` },
+    captureButtonText: { ...typography.caption, color: palette.textPrimary, marginTop: 8 },
+    divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
+    dividerLine: { flex: 1, height: 1, backgroundColor: palette.border },
+    dividerText: { ...typography.caption, color: palette.textSecondary, marginHorizontal: 10 },
+    galleryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: palette.white,
+      borderWidth: 1,
+      borderColor: palette.border,
+      paddingVertical: 16,
+      borderRadius: 12,
+    },
+    galleryButtonText: { ...typography.body, color: palette.primary, marginLeft: 10, fontWeight: '500' },
+    footer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: palette.white,
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      borderTopWidth: 1,
+      borderTopColor: palette.border,
+    },
+    mediaCount: { flexDirection: 'row', alignItems: 'center' },
+    mediaCountText: { ...typography.caption, color: palette.textSecondary, marginLeft: 8 },
+    continueButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: palette.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25 },
+    continueButtonText: { ...typography.body, color: palette.white, fontWeight: '600', marginRight: 8 },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.35)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    modalCard: {
+      width: '100%',
+      backgroundColor: palette.white,
+      borderRadius: 16,
+      padding: 20,
+    },
+    modalTitle: {
+      ...typography.h4,
+      color: palette.textPrimary,
+      marginBottom: 12,
+    },
+    modalInput: {
+      borderWidth: 1,
+      borderColor: palette.border,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      color: palette.textPrimary,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginTop: 16,
+    },
+    modalButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 16,
+      marginLeft: 10,
+    },
+    modalCancel: {
+      backgroundColor: palette.neutralLight,
+    },
+    modalConfirm: {
+      backgroundColor: palette.primary,
+    },
+    modalCancelText: {
+      ...typography.caption,
+      color: palette.textPrimary,
+    },
+    modalConfirmText: {
+      ...typography.caption,
+      color: palette.white,
+      fontWeight: '600',
+    },
+  }));
 
   const [media, setMedia] = useState([]);
   const [location, setLocation] = useState({
     latitude: null,
     longitude: null,
-    address: 'Tap to add location (optional)',
+    address: t('reportFlow.addLocationOptional'),
     provided: false,
   });
   const [isRecording, setIsRecording] = useState(false);
@@ -76,21 +212,21 @@ export default function ReportMediaScreen({ route, navigation }) {
 
   const handleLocationAction = () => {
     Alert.alert(
-      'Add Location',
-      'Choose how you want to add the location.',
+      t('reportFlow.locationAddTitle'),
+      t('reportFlow.locationAddBody'),
       [
         {
-          text: 'Use current location',
+          text: t('reportFlow.locationUseCurrent'),
           onPress: () => handleAddLocation(),
         },
         {
-          text: 'Enter address',
+          text: t('reportFlow.locationEnterAddress'),
           onPress: () => {
             setAddressInput('');
             setAddressModalVisible(true);
           },
         },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
       ]
     );
   };
@@ -105,15 +241,15 @@ export default function ReportMediaScreen({ route, navigation }) {
       if (!ok) {
         setIsFetchingLocation(false);
         Alert.alert(
-          'Location permission',
-          'Location permission was denied. You can continue without adding location.'
+          t('reportFlow.locationPermissionTitle'),
+          t('reportFlow.locationPermissionDenied')
         );
         return;
       }
 
       if (!Geolocation || typeof Geolocation.getCurrentPosition !== 'function') {
         setIsFetchingLocation(false);
-        Alert.alert('Location unavailable', 'Location is not available right now.');
+        Alert.alert(t('reportFlow.locationUnavailable'), t('reportFlow.locationUnavailableBody'));
         return;
       }
 
@@ -125,7 +261,7 @@ export default function ReportMediaScreen({ route, navigation }) {
           setLocation({
             latitude: lat,
             longitude: lng,
-            address: 'Fetching address...',
+            address: t('reportFlow.gettingLocation'),
             provided: true,
           });
 
@@ -135,7 +271,7 @@ export default function ReportMediaScreen({ route, navigation }) {
         (error) => {
           console.log('Location error:', error);
           setIsFetchingLocation(false);
-          Alert.alert('Location unavailable', 'Enable GPS/location or continue without it.');
+          Alert.alert(t('reportFlow.locationUnavailable'), t('reportFlow.locationEnableGps'));
         },
         {
           enableHighAccuracy: false,
@@ -146,7 +282,7 @@ export default function ReportMediaScreen({ route, navigation }) {
     } catch (e) {
       console.warn('handleAddLocation error:', e);
       setIsFetchingLocation(false);
-      Alert.alert('Location error', 'Could not fetch location. Continue without it.');
+      Alert.alert(t('reportFlow.locationError'), t('reportFlow.locationErrorBody'));
     }
   };
 
@@ -157,17 +293,17 @@ export default function ReportMediaScreen({ route, navigation }) {
       if (formatted) {
         setLocation(prev => ({ ...prev, address: formatted, provided: true }));
       } else {
-        setLocation(prev => ({ ...prev, address: 'Location added', provided: true }));
+        setLocation(prev => ({ ...prev, address: t('reportFlow.locationCurrentAdded'), provided: true }));
       }
     } catch (error) {
       console.log('Geocoding error:', error);
-      setLocation(prev => ({ ...prev, address: 'Location added', provided: true }));
+      setLocation(prev => ({ ...prev, address: t('reportFlow.locationCurrentAdded'), provided: true }));
     }
   };
 
   const handleAddressSubmit = async () => {
     if (!addressInput.trim()) {
-      Alert.alert('Missing address', 'Please enter an address.');
+      Alert.alert(t('reportFlow.addressMissingTitle'), t('reportFlow.addressMissingBody'));
       return;
     }
 
@@ -184,10 +320,10 @@ export default function ReportMediaScreen({ route, navigation }) {
         });
         setAddressModalVisible(false);
       } else {
-        Alert.alert('Not found', 'We could not find that address. Try another one.');
+        Alert.alert(t('reportFlow.addressNotFoundTitle'), t('reportFlow.addressNotFoundBody'));
       }
     } catch (error) {
-      Alert.alert('Error', 'Unable to find that address right now.');
+      Alert.alert(t('reportFlow.addressErrorTitle'), t('reportFlow.addressErrorBody'));
     } finally {
       setIsGeocodingAddress(false);
     }
@@ -201,16 +337,17 @@ export default function ReportMediaScreen({ route, navigation }) {
         maxWidth: 1024,
         maxHeight: 1024,
         saveToPhotos: true,
+        includeExtra: true,
       },
       (response) => {
         if (response.didCancel) return;
-        if (response.error) return Alert.alert('Error', 'Failed to take photo');
+        if (response.error) return Alert.alert(t('reportFlow.addressErrorTitle'), t('reportFlow.photoFail'));
 
         const asset = response.assets?.[0];
         if (!asset?.uri) return;
 
         const newMedia = {
-          uri: asset.uri,
+          uri: asset.fileCopyUri || asset.uri,
           kind: 'photo',
           mimeType: asset.type,      // ✅ e.g. image/jpeg
           fileName: asset.fileName,
@@ -230,16 +367,17 @@ export default function ReportMediaScreen({ route, navigation }) {
         videoQuality: 'high',
         durationLimit: 60,
         saveToPhotos: true,
+        includeExtra: true,
       },
       (response) => {
         if (response.didCancel) return;
-        if (response.error) return Alert.alert('Error', 'Failed to record video');
+        if (response.error) return Alert.alert(t('reportFlow.addressErrorTitle'), t('reportFlow.videoFail'));
 
         const asset = response.assets?.[0];
         if (!asset?.uri) return;
 
         const newMedia = {
-          uri: asset.uri,
+          uri: asset.fileCopyUri || asset.uri,
           kind: 'video',
           mimeType: asset.type,      // ✅ e.g. video/mp4
           fileName: asset.fileName,
@@ -254,7 +392,7 @@ export default function ReportMediaScreen({ route, navigation }) {
 
   const handleRecordAudio = () => {
     setIsRecording(true);
-    Alert.alert('Info', 'Audio recording feature coming soon');
+    Alert.alert(t('common.success'), t('reportFlow.audioSoon'));
     setTimeout(() => setIsRecording(false), 1000);
   };
 
@@ -264,10 +402,11 @@ export default function ReportMediaScreen({ route, navigation }) {
         mediaType: 'mixed',
         quality: 0.8,
         selectionLimit: 10,
+        includeExtra: true,
       },
       (response) => {
         if (response.didCancel) return;
-        if (response.error) return Alert.alert('Error', 'Failed to select media');
+        if (response.error) return Alert.alert(t('reportFlow.addressErrorTitle'), t('reportFlow.galleryFail'));
 
         const assets = response.assets || [];
         if (!assets.length) return;
@@ -278,7 +417,7 @@ export default function ReportMediaScreen({ route, navigation }) {
             const isVideo = asset.type?.startsWith('video/');
             const isAudio = asset.type?.startsWith('audio/');
             return {
-              uri: asset.uri,
+              uri: asset.fileCopyUri || asset.uri,
               kind: isAudio ? 'audio' : (isVideo ? 'video' : 'photo'),
               mimeType: asset.type,     // ✅ important
               fileName: asset.fileName,
@@ -302,10 +441,10 @@ export default function ReportMediaScreen({ route, navigation }) {
 
   const handleContinue = () => {
     if (media.length === 0) {
-      Alert.alert('No Media', 'Submit without media?', [
-        { text: 'Cancel', style: 'cancel' },
+      Alert.alert(t('reportFlow.noMediaTitle'), t('reportFlow.noMediaBody'), [
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Continue',
+          text: t('common.continue'),
           onPress: () => navigation.navigate('ReportDescription', { category, media, location }),
         },
       ]);
@@ -319,16 +458,16 @@ export default function ReportMediaScreen({ route, navigation }) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color={colors.neutralDark} />
+          <Icon name="arrow-left" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Media</Text>
+        <Text style={styles.headerTitle}>{t('reportFlow.mediaTitle')}</Text>
         <View style={{ width: 24 }} />
       </View>
 
       <TouchableOpacity style={styles.locationContainer} onPress={handleLocationAction} activeOpacity={0.8}>
         <Icon name="map-marker" size={16} color={colors.primary} />
         <Text style={styles.locationText}>
-          {isFetchingLocation ? 'Getting location…' : (location?.address || 'Tap to add location (optional)')}
+          {isFetchingLocation ? t('reportFlow.gettingLocation') : (location?.address || t('reportFlow.addLocationOptional'))}
         </Text>
         <View style={styles.locationRight}>
           {location?.provided ? (
@@ -350,12 +489,12 @@ export default function ReportMediaScreen({ route, navigation }) {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.modalCard}
           >
-            <Text style={styles.modalTitle}>Enter address</Text>
+            <Text style={styles.modalTitle}>{t('reportFlow.addressTitle')}</Text>
             <TextInput
               value={addressInput}
               onChangeText={setAddressInput}
-              placeholder="Street, city, country"
-              placeholderTextColor={colors.neutralMedium}
+              placeholder={t('reportFlow.addressPlaceholder')}
+              placeholderTextColor={colors.textSecondary}
               style={styles.modalInput}
               autoCapitalize="words"
             />
@@ -364,7 +503,7 @@ export default function ReportMediaScreen({ route, navigation }) {
                 style={[styles.modalButton, styles.modalCancel]}
                 onPress={() => setAddressModalVisible(false)}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalConfirm]}
@@ -372,7 +511,7 @@ export default function ReportMediaScreen({ route, navigation }) {
                 disabled={isGeocodingAddress}
               >
                 <Text style={styles.modalConfirmText}>
-                  {isGeocodingAddress ? 'Searching...' : 'Use address'}
+                  {isGeocodingAddress ? t('reportFlow.addressSearching') : t('reportFlow.addressUse')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -387,11 +526,11 @@ export default function ReportMediaScreen({ route, navigation }) {
               <View key={index} style={styles.mediaItem}>
                 <Image source={{ uri: item.uri }} style={styles.mediaImage} />
                 <TouchableOpacity style={styles.removeButton} onPress={() => removeMedia(index)}>
-                  <Icon name="close-circle" size={24} color={colors.secondary} />
+                  <Icon name="close-circle" size={18} color={colors.secondary} />
                 </TouchableOpacity>
                 {item.kind === 'video' && (
                   <View style={styles.videoIndicator}>
-                    <Icon name="play" size={16} color={colors.white} />
+                    <Icon name="play" size={12} color={colors.white} />
                   </View>
                 )}
               </View>
@@ -399,25 +538,25 @@ export default function ReportMediaScreen({ route, navigation }) {
           </View>
         ) : (
           <View style={styles.emptyMediaContainer}>
-            <Icon name="image-multiple" size={80} color={colors.neutralLight} />
-            <Text style={styles.emptyMediaText}>No media added yet</Text>
+            <Icon name="image-multiple" size={80} color={colors.border} />
+            <Text style={styles.emptyMediaText}>{t('reportFlow.mediaEmptyTitle')}</Text>
             <Text style={styles.emptyMediaSubtext}>
-              Add photos, videos, or audio to make your report more credible
+              {t('reportFlow.mediaEmptySubtitle')}
             </Text>
           </View>
         )}
 
         <View style={styles.mediaOptions}>
-          <Text style={styles.sectionTitle}>Capture New Media</Text>
+          <Text style={styles.sectionTitle}>{t('reportFlow.captureTitle')}</Text>
           <View style={styles.captureButtons}>
             <TouchableOpacity style={styles.captureButton} onPress={handleTakePhoto}>
-              <Icon name="camera" size={30} color={colors.primary} />
-              <Text style={styles.captureButtonText}>Photo</Text>
+              <Icon name="camera" size={24} color={colors.primary} />
+              <Text style={styles.captureButtonText}>{t('reportFlow.capturePhoto')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.captureButton} onPress={handleTakeVideo}>
-              <Icon name="video" size={30} color={colors.primary} />
-              <Text style={styles.captureButtonText}>Video</Text>
+              <Icon name="video" size={24} color={colors.primary} />
+              <Text style={styles.captureButtonText}>{t('reportFlow.captureVideo')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -426,177 +565,38 @@ export default function ReportMediaScreen({ route, navigation }) {
             >
               <Icon
                 name={isRecording ? 'microphone' : 'microphone-outline'}
-                size={30}
+                size={24}
                 color={isRecording ? colors.secondary : colors.primary}
               />
-              <Text style={styles.captureButtonText}>Audio</Text>
+              <Text style={styles.captureButtonText}>{t('reportFlow.captureAudio')}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text style={styles.dividerText}>{t('reportFlow.captureOr')}</Text>
             <View style={styles.dividerLine} />
           </View>
 
           <TouchableOpacity style={styles.galleryButton} onPress={handleSelectFromGallery}>
             <Icon name="folder-multiple-image" size={24} color={colors.primary} />
-            <Text style={styles.galleryButtonText}>Upload from gallery</Text>
+            <Text style={styles.galleryButtonText}>{t('reportFlow.uploadFromGallery')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
         <View style={styles.mediaCount}>
-          <Icon name="file" size={20} color={colors.neutralMedium} />
+          <Icon name="file" size={20} color={colors.textSecondary} />
           <Text style={styles.mediaCountText}>
-            {media.length} media file{media.length !== 1 ? 's' : ''}
+            {t('reportFlow.mediaCount', { count: media.length, plural: media.length !== 1 ? 's' : '' })}
           </Text>
         </View>
         <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueButtonText}>Continue</Text>
+          <Text style={styles.continueButtonText}>{t('common.continue')}</Text>
           <Icon name="arrow-right" size={20} color={colors.white} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutralLight,
-  },
-  headerTitle: { ...typography.h3, color: colors.neutralDark },
-
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutralLight,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  locationText: { ...typography.caption, color: colors.neutralDark, marginLeft: 8, flex: 1 },
-  locationRight: { marginLeft: 10 },
-
-  content: { padding: 20, paddingBottom: 100 },
-  emptyMediaContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  emptyMediaText: { ...typography.h3, color: colors.neutralMedium, marginTop: 20, marginBottom: 10 },
-  emptyMediaSubtext: { ...typography.body, color: colors.neutralMedium, textAlign: 'center', lineHeight: 22 },
-
-  mediaGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 30 },
-  mediaItem: { width: '48%', aspectRatio: 1, marginBottom: '4%', marginRight: '4%', position: 'relative' },
-  mediaImage: { width: '100%', height: '100%', borderRadius: 12 },
-  removeButton: { position: 'absolute', top: -8, right: -8, backgroundColor: colors.white, borderRadius: 12 },
-  videoIndicator: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  mediaOptions: { marginBottom: 30 },
-  sectionTitle: { ...typography.body, color: colors.neutralDark, fontWeight: '600', marginBottom: 15 },
-  captureButtons: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  captureButton: { alignItems: 'center', backgroundColor: colors.neutralLight, padding: 20, borderRadius: 16, width: '31%' },
-  recordingButton: { backgroundColor: `${colors.secondary}20` },
-  captureButtonText: { ...typography.caption, color: colors.neutralDark, marginTop: 8 },
-
-  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: colors.neutralLight },
-  dividerText: { ...typography.caption, color: colors.neutralMedium, marginHorizontal: 10 },
-
-  galleryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.neutralLight,
-    paddingVertical: 16,
-    borderRadius: 12,
-  },
-  galleryButtonText: { ...typography.body, color: colors.primary, marginLeft: 10, fontWeight: '500' },
-
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.white,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderTopWidth: 1,
-    borderTopColor: colors.neutralLight,
-  },
-  mediaCount: { flexDirection: 'row', alignItems: 'center' },
-  mediaCountText: { ...typography.caption, color: colors.neutralMedium, marginLeft: 8 },
-  continueButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25 },
-  continueButtonText: { ...typography.body, color: colors.white, fontWeight: '600', marginRight: 8 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalCard: {
-    width: '100%',
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 20,
-  },
-  modalTitle: {
-    ...typography.h4,
-    color: colors.neutralDark,
-    marginBottom: 12,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: colors.neutralLight,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: colors.neutralDark,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 16,
-  },
-  modalButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 16,
-    marginLeft: 10,
-  },
-  modalCancel: {
-    backgroundColor: colors.neutralLight,
-  },
-  modalConfirm: {
-    backgroundColor: colors.primary,
-  },
-  modalCancelText: {
-    ...typography.caption,
-    color: colors.neutralDark,
-  },
-  modalConfirmText: {
-    ...typography.caption,
-    color: colors.white,
-    fontWeight: '600',
-  },
-});

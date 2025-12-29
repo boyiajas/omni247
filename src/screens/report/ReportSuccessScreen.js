@@ -1,10 +1,60 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Button from '../../components/common/Button';
-import { colors, typography, spacing } from '../../theme';
+import { typography, spacing } from '../../theme';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import useThemedStyles from '../../theme/useThemedStyles';
 
 const ReportSuccessScreen = ({ navigation }) => {
+    const { t } = useLanguage();
+    const { theme } = useTheme();
+    const colors = theme.colors;
+    const styles = useThemedStyles((palette) => ({
+        container: {
+            flex: 1,
+            backgroundColor: palette.background,
+        },
+        content: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: spacing.xl,
+        },
+        iconContainer: {
+            marginBottom: spacing.xl,
+        },
+        title: {
+            fontSize: typography.sizes.xxl,
+            fontWeight: typography.weights.bold,
+            color: palette.textPrimary,
+            marginBottom: spacing.md,
+            fontFamily: typography.families.bold,
+        },
+        message: {
+            fontSize: typography.sizes.md,
+            color: palette.textSecondary,
+            textAlign: 'center',
+            marginBottom: spacing.xl,
+            fontFamily: typography.families.regular,
+            lineHeight: 22,
+        },
+        info: {
+            alignSelf: 'stretch',
+            marginBottom: spacing.xl,
+        },
+        infoText: {
+            fontSize: typography.sizes.md,
+            color: palette.textPrimary,
+            marginBottom: spacing.sm,
+            fontFamily: typography.families.regular,
+        },
+        button: {
+            width: '100%',
+            marginBottom: spacing.md,
+        },
+    }));
     const handleViewReport = () => {
         navigation.navigate('MainTabs', { screen: 'NewsFeed' });
     };
@@ -20,31 +70,31 @@ const ReportSuccessScreen = ({ navigation }) => {
                     <Icon name="checkmark-circle" size={100} color={colors.success} />
                 </View>
 
-                <Text style={styles.title}>Report Submitted!</Text>
+                <Text style={styles.title}>{t('reportSuccess.title')}</Text>
                 <Text style={styles.message}>
-                    Thank you for your contribution. Your report is being verified and will be visible soon.
+                    {t('reportSuccess.body')}
                 </Text>
 
                 <View style={styles.info}>
                     <Text style={styles.infoText}>
-                        ✓ Your report has been received
+                        {t('reportSuccess.infoReceived')}
                     </Text>
                     <Text style={styles.infoText}>
-                        ✓ AI verification in progress
+                        {t('reportSuccess.infoVerifying')}
                     </Text>
                     <Text style={styles.infoText}>
-                        ✓ You'll be notified once verified
+                        {t('reportSuccess.infoNotify')}
                     </Text>
                 </View>
 
                 <Button
-                    title="View My Reports"
+                    title={t('reportSuccess.viewReport')}
                     onPress={handleViewReport}
                     style={styles.button}
                 />
 
                 <Button
-                    title="Submit Another Report"
+                    title={t('reportSuccess.submitAnother')}
                     variant="outline"
                     onPress={handleCreateAnother}
                     style={styles.button}
@@ -53,50 +103,4 @@ const ReportSuccessScreen = ({ navigation }) => {
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.white,
-    },
-    content: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: spacing.xl,
-    },
-    iconContainer: {
-        marginBottom: spacing.xl,
-    },
-    title: {
-        fontSize: typography.sizes.xxl,
-        fontWeight: typography.weights.bold,
-        color: colors.textPrimary,
-        marginBottom: spacing.md,
-        fontFamily: typography.families.bold,
-    },
-    message: {
-        fontSize: typography.sizes.md,
-        color: colors.textSecondary,
-        textAlign: 'center',
-        marginBottom: spacing.xl,
-        fontFamily: typography.families.regular,
-        lineHeight: 22,
-    },
-    info: {
-        alignSelf: 'stretch',
-        marginBottom: spacing.xl,
-    },
-    infoText: {
-        fontSize: typography.sizes.md,
-        color: colors.textPrimary,
-        marginBottom: spacing.sm,
-        fontFamily: typography.families.regular,
-    },
-    button: {
-        width: '100%',
-        marginBottom: spacing.md,
-    },
-});
-
 export default ReportSuccessScreen;

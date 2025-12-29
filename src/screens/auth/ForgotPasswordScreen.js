@@ -1,13 +1,53 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
-import { colors, typography, spacing } from '../../theme';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { typography, spacing } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
+import useThemedStyles from '../../theme/useThemedStyles';
 
 const ForgotPasswordScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [emailSent, setEmailSent] = useState(false);
+    const { t } = useLanguage();
+    const { theme } = useTheme();
+    const colors = theme.colors;
+    const styles = useThemedStyles(() => ({
+        container: {
+            flex: 1,
+            backgroundColor: colors.white,
+        },
+        content: {
+            flex: 1,
+            padding: spacing.xl,
+            justifyContent: 'center',
+        },
+        title: {
+            fontSize: typography.sizes.xxl,
+            fontWeight: typography.weights.bold,
+            color: colors.textPrimary,
+            marginBottom: spacing.md,
+            fontFamily: typography.families.bold,
+        },
+        subtitle: {
+            fontSize: typography.sizes.md,
+            color: colors.textSecondary,
+            marginBottom: spacing.xl,
+            fontFamily: typography.families.regular,
+        },
+        message: {
+            fontSize: typography.sizes.md,
+            color: colors.textSecondary,
+            textAlign: 'center',
+            marginBottom: spacing.xl,
+            fontFamily: typography.families.regular,
+        },
+        button: {
+            marginTop: spacing.md,
+        },
+    }));
 
     const handleSend = async () => {
         setLoading(true);
@@ -22,12 +62,12 @@ const ForgotPasswordScreen = ({ navigation }) => {
         return (
             <View style={styles.container}>
                 <View style={styles.content}>
-                    <Text style={styles.title}>Check Your Email</Text>
+                    <Text style={styles.title}>{t('auth.forgotCheckEmailTitle')}</Text>
                     <Text style={styles.message}>
-                        We've sent a password reset link to{' \n'}{email}
+                        {t('auth.forgotCheckEmailMessage', { email })}
                     </Text>
                     <Button
-                        title="Back to Login"
+                        title={t('auth.backToLogin')}
                         onPress={() => navigation.navigate('Login')}
                         style={styles.button}
                     />
@@ -41,22 +81,20 @@ const ForgotPasswordScreen = ({ navigation }) => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}>
             <View style={styles.content}>
-                <Text style={styles.title}>Reset Password</Text>
-                <Text style={styles.subtitle}>
-                    Enter your email address and we'll send you a link to reset your password
-                </Text>
+                <Text style={styles.title}>{t('auth.resetPasswordTitle')}</Text>
+                <Text style={styles.subtitle}>{t('auth.resetPasswordSubtitle')}</Text>
 
                 <Input
-                    label="Email"
+                    label={t('auth.emailLabel')}
                     value={email}
                     onChangeText={setEmail}
-                    placeholder="Enter your email"
+                    placeholder={t('auth.emailPlaceholder')}
                     keyboardType="email-address"
                     autoCapitalize="none"
                 />
 
                 <Button
-                    title="Send Reset Link"
+                    title={t('auth.sendResetLink')}
                     onPress={handleSend}
                     loading={loading}
                     disabled={!email}
@@ -64,7 +102,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                 />
 
                 <Button
-                    title="Back to Login"
+                    title={t('auth.backToLogin')}
                     variant="text"
                     onPress={() => navigation.goBack()}
                 />
@@ -72,40 +110,5 @@ const ForgotPasswordScreen = ({ navigation }) => {
         </KeyboardAvoidingView>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.white,
-    },
-    content: {
-        flex: 1,
-        padding: spacing.xl,
-        justifyContent: 'center',
-    },
-    title: {
-        fontSize: typography.sizes.xxl,
-        fontWeight: typography.weights.bold,
-        color: colors.textPrimary,
-        marginBottom: spacing.md,
-        fontFamily: typography.families.bold,
-    },
-    subtitle: {
-        fontSize: typography.sizes.md,
-        color: colors.textSecondary,
-        marginBottom: spacing.xl,
-        fontFamily: typography.families.regular,
-    },
-    message: {
-        fontSize: typography.sizes.md,
-        color: colors.textSecondary,
-        textAlign: 'center',
-        marginBottom: spacing.xl,
-        fontFamily: typography.families.regular,
-    },
-    button: {
-        marginTop: spacing.md,
-    },
-});
 
 export default ForgotPasswordScreen;

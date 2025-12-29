@@ -2,6 +2,7 @@ import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './navigation/AppNavigator';
 import { AuthProvider } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { LocationProvider } from './contexts/LocationContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -11,15 +12,17 @@ const App = () => {
     return (
         <ErrorBoundary>
             <SafeAreaProvider>
-                <ThemeProvider>
-                    <AuthProvider>
-                        <LocationProvider>
-                            <NotificationProvider>
-                                <AppNavigator />
-                            </NotificationProvider>
-                        </LocationProvider>
-                    </AuthProvider>
-                </ThemeProvider>
+                <AuthProvider>
+                    <ThemeProvider>
+                        <LanguageProvider>
+                            <LocationProvider>
+                                <NotificationProvider>
+                                    <AppNavigator />
+                                </NotificationProvider>
+                            </LocationProvider>
+                        </LanguageProvider>
+                    </ThemeProvider>
+                </AuthProvider>
             </SafeAreaProvider>
         </ErrorBoundary>
     );

@@ -1,8 +1,8 @@
 <template>
-  <section class="trending-section">
+<section id="trending" class="trending-section">
     <div class="trending-container">
       <div class="section-header">
-        <h2 class="section-title">🔥 Trending Now</h2>
+        <h2 class="section-title">Trending Now</h2>
         <p class="section-subtitle">Most viewed incidents by media type</p>
       </div>
       

@@ -13,7 +13,7 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import { colors, typography } from '../../theme/colors';
+import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { reportsAPI } from '../../services/api/reports';
 import { commentsAPI } from '../../services/api/comments';
@@ -23,6 +23,9 @@ import { useNotifications } from '../../hooks/useNotifications';
 import useCategories from '../../hooks/useCategories';
 import { useLocation } from '../../hooks/useLocation';
 import { useFocusEffect } from '@react-navigation/native';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import useThemedStyles from '../../theme/useThemedStyles';
 
 // Placeholder image for reports without media
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&q=80';
@@ -40,17 +43,7 @@ const categorySlugToName = {
   7: 'other',
 };
 
-const categoryColors = {
-  crime: colors.secondary,
-  event: colors.warning,
-  accident: '#EA580C',
-  environment: colors.accent,
-  politics: '#7C3AED',
-  infrastructure: '#4F46E5',
-  other: colors.neutralMedium,
-};
-
-const HeaderNotificationsButton = ({ navigation }) => {
+const HeaderNotificationsButton = ({ navigation, colors, styles }) => {
   const { unreadCount } = useNotifications();
 
   return (
@@ -58,7 +51,7 @@ const HeaderNotificationsButton = ({ navigation }) => {
       style={styles.notificationButton}
       onPress={() => navigation.navigate('Notifications')}
     >
-      <Icon name="bell-outline" size={24} color={colors.neutralDark} />
+      <Icon name="bell-outline" size={24} color={colors.textPrimary} />
       {unreadCount > 0 && (
         <View style={styles.notificationBadge}>
           <Text style={styles.notificationBadgeText}>
@@ -71,8 +64,8 @@ const HeaderNotificationsButton = ({ navigation }) => {
 };
 
 // Helper function to format time ago
-const formatTimeAgo = (dateString) => {
-  if (!dateString) return 'Just now';
+const formatTimeAgo = (dateString, t) => {
+  if (!dateString) return t('newsfeed.justNow');
   const now = new Date();
   const date = new Date(dateString);
   const diffMs = now - date;
@@ -80,14 +73,14 @@ const formatTimeAgo = (dateString) => {
   const diffHours = Math.floor(diffMinutes / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffMinutes < 1) return 'Just now';
-  if (diffMinutes < 60) return `${diffMinutes} min ago`;
-  if (diffHours < 24) return `${diffHours} hr ago`;
-  return `${diffDays} days ago`;
+  if (diffMinutes < 1) return t('newsfeed.justNow');
+  if (diffMinutes < 60) return t('newsfeed.minutesAgo', { count: diffMinutes });
+  if (diffHours < 24) return t('newsfeed.hoursAgo', { count: diffHours });
+  return t('newsfeed.daysAgo', { count: diffDays });
 };
 
 // Transform API report to feed format
-const transformApiReport = (report) => {
+const transformApiReport = (report, t) => {
   // Get first media URL if available
   let mediaUrl = null;
   if (report.media && report.media.length > 0) {
@@ -119,10 +112,10 @@ const transformApiReport = (report) => {
   return {
     id: `api-${report.id}`,
     userId: report.user_id, // For ownership checking
-    title: report.title || 'Untitled Report',
+    title: report.title || t('newsfeed.untitled'),
     description: report.description || '',
     category: categorySlugToName[report.category_id] || 'other',
-    location: report.address || report.location_address || 'Unknown location',
+    location: report.address || report.location_address || t('newsfeed.unknownLocation'),
     latitude: report.latitude ? Number(report.latitude) : null,
     longitude: report.longitude ? Number(report.longitude) : null,
     distanceBadge: null,
@@ -131,9 +124,9 @@ const transformApiReport = (report) => {
     rating: parseFloat(report.average_rating) || 0,
     reportsCount: report.views_count || 1,
     commentsCount: report.comments_count || 0, // From withCount('comments')
-    timeAgo: formatTimeAgo(report.created_at),
+    timeAgo: formatTimeAgo(report.created_at, t),
     user: {
-      name: report.is_anonymous || report.privacy === 'anonymous' ? null : (report.user?.name || 'User'),
+      name: report.is_anonymous || report.privacy === 'anonymous' ? null : (report.user?.name || t('newsfeed.userFallback')),
       isVerified: report.user?.is_verified || false,
       avatar: report.user?.avatar_url || null,
     },
@@ -146,6 +139,549 @@ const transformApiReport = (report) => {
 
 export default function NewsFeedScreen({ navigation }) {
   const { user } = useAuth();
+  const { t } = useLanguage();
+  const { theme } = useTheme();
+  const colors = theme.colors;
+  const styles = useThemedStyles((palette) => ({
+    container: {
+      flex: 1,
+      backgroundColor: palette.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.border,
+    },
+    headerTitle: {
+      ...typography.h2,
+      color: palette.textPrimary,
+    },
+    searchButton: {
+      padding: 5,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    notificationButton: {
+      position: 'relative',
+      marginLeft: 12,
+    },
+    notificationBadge: {
+      position: 'absolute',
+      top: -5,
+      right: -5,
+      backgroundColor: palette.secondary,
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    notificationBadgeText: {
+      ...typography.small,
+      color: palette.white,
+      fontSize: 10,
+    },
+    searchInputContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: palette.neutralLight,
+      borderRadius: 20,
+      paddingHorizontal: 15,
+      paddingVertical: 8,
+    },
+    searchInput: {
+      flex: 1,
+      marginLeft: 10,
+      fontSize: 16,
+      color: palette.textPrimary,
+      paddingVertical: 0,
+    },
+    searchCloseBtn: {
+      marginLeft: 10,
+    },
+    searchCancelText: {
+      color: palette.primary,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    categoriesContainer: {
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.border,
+    },
+    categoriesScroll: {
+      paddingHorizontal: 15,
+    },
+    categoryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: palette.neutralLight,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 20,
+      marginRight: 10,
+    },
+    categoryButtonActive: {
+      backgroundColor: palette.primary,
+    },
+    categoryButtonText: {
+      color: palette.textSecondary,
+      marginLeft: 6,
+      fontWeight: '500',
+    },
+    categoryButtonTextActive: {
+      color: palette.white,
+    },
+    trendingSection: {
+      marginBottom: 20,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      marginBottom: 15,
+    },
+    sectionTitle: {
+      ...typography.body,
+      color: palette.textPrimary,
+      fontWeight: '600',
+      flex: 1,
+    },
+    sectionActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginLeft: 'auto',
+      justifyContent: 'flex-end',
+    },
+    distanceFilterText: {
+      color: palette.textSecondary,
+      fontWeight: '500',
+      marginRight: 0,
+    },
+    seeAllText: {
+      color: palette.primary,
+      fontWeight: '600',
+    },
+    trendingList: {
+      paddingLeft: 20,
+    },
+    trendingCard: {
+      width: width * 0.7,
+      height: 180,
+      borderRadius: 12,
+      marginRight: 15,
+      overflow: 'hidden',
+      position: 'relative',
+    },
+    trendingImage: {
+      width: '100%',
+      height: '100%',
+    },
+    trendingOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      padding: 15,
+      justifyContent: 'flex-end',
+    },
+    trendingBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: palette.secondary,
+      alignSelf: 'flex-start',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+      marginBottom: 10,
+    },
+    trendingBadgeText: {
+      ...typography.small,
+      color: palette.white,
+      fontWeight: '600',
+      marginLeft: 4,
+    },
+    trendingTitle: {
+      ...typography.h3,
+      color: palette.white,
+      marginBottom: 8,
+    },
+    trendingMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    trendingLocation: {
+      color: palette.white,
+      marginLeft: 4,
+    },
+    feedList: {
+      paddingBottom: 20,
+    },
+    feedItem: {
+      backgroundColor: palette.white,
+      borderRadius: 10,
+      marginHorizontal: 16,
+      marginBottom: 10,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: palette.border,
+    },
+    feedHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    userAvatar: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      marginRight: 10,
+    },
+    anonymousAvatar: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: palette.neutralLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 10,
+    },
+    userInfo: {
+      flex: 1,
+    },
+    userNameContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    userName: {
+      ...typography.body,
+      color: palette.textPrimary,
+      fontWeight: '600',
+      marginRight: 6,
+    },
+    reportTime: {
+      ...typography.small,
+      color: palette.textSecondary,
+      marginTop: 2,
+    },
+    categoryBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 12,
+    },
+    categoryText: {
+      ...typography.small,
+      color: palette.white,
+      fontWeight: '600',
+      textTransform: 'capitalize',
+    },
+    feedTitle: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: palette.textPrimary,
+      marginBottom: 4,
+    },
+    feedDescription: {
+      fontSize: 13,
+      color: palette.textSecondary,
+      marginBottom: 8,
+      lineHeight: 18,
+    },
+    feedImage: {
+      width: '100%',
+      height: 140,
+      borderRadius: 8,
+    },
+    imageContainer: {
+      position: 'relative',
+      marginBottom: 0,
+    },
+    feedFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 4,
+      paddingTop: 0,
+    },
+    locationInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    locationText: {
+      color: palette.textPrimary,
+      marginLeft: 6,
+      marginRight: 8,
+    },
+    distanceText: {
+      color: palette.textSecondary,
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    statItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginLeft: 15,
+    },
+    statText: {
+      color: palette.textPrimary,
+      marginLeft: 4,
+      fontWeight: '600',
+    },
+    credibilityWarning: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: `${palette.secondary}10`,
+      padding: 10,
+      borderRadius: 8,
+      marginTop: 12,
+    },
+    credibilityText: {
+      color: palette.secondary,
+      marginLeft: 8,
+      fontWeight: '500',
+    },
+    actionBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 4,
+      paddingTop: 4,
+      borderTopWidth: 1,
+      borderTopColor: palette.border,
+    },
+    actionButton: {
+      padding: 4,
+      marginRight: 10,
+    },
+    actionSpacer: {
+      flex: 1,
+    },
+    commentButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    commentCount: {
+      color: palette.textSecondary,
+      fontSize: 13,
+      fontWeight: '500',
+      marginLeft: 4,
+    },
+    replyButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      backgroundColor: palette.neutralLight,
+      borderRadius: 16,
+    },
+    replyText: {
+      color: palette.textSecondary,
+      fontSize: 13,
+      fontWeight: '500',
+      marginLeft: 4,
+    },
+    replyPanel: {
+      marginTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: palette.border,
+      paddingTop: 12,
+    },
+    replyHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    replyHeaderText: {
+      ...typography.caption,
+      color: palette.textPrimary,
+      fontWeight: '600',
+    },
+    replyHeaderHint: {
+      ...typography.small,
+      color: palette.textSecondary,
+    },
+    replyList: {
+      maxHeight: 160,
+      marginBottom: 10,
+    },
+    replyEmpty: {
+      ...typography.small,
+      color: palette.textSecondary,
+    },
+    replyItem: {
+      paddingVertical: 6,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.border,
+    },
+    replyAuthor: {
+      ...typography.small,
+      color: palette.textPrimary,
+      fontWeight: '600',
+    },
+    replyBody: {
+      ...typography.small,
+      color: palette.textSecondary,
+      marginTop: 2,
+    },
+    replyComposer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: palette.neutralLight,
+      borderRadius: 18,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    replyDisabled: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: palette.neutralLight,
+      borderRadius: 18,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    replyDisabledText: {
+      ...typography.caption,
+      color: palette.textSecondary,
+      marginLeft: 8,
+    },
+    replyInput: {
+      flex: 1,
+      color: palette.textPrimary,
+      fontSize: 13,
+      paddingVertical: 0,
+    },
+    replySend: {
+      marginLeft: 8,
+    },
+    ownerBadge: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: palette.primary,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 10,
+    },
+    ownerBadgeText: {
+      color: palette.white,
+      fontSize: 10,
+      fontWeight: '600',
+      marginLeft: 4,
+    },
+    nearbyBadge: {
+      position: 'absolute',
+      bottom: 12,
+      left: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: palette.accent,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 16,
+    },
+    nearbyBadgeText: {
+      color: palette.white,
+      fontSize: 11,
+      fontWeight: '600',
+      marginLeft: 4,
+    },
+    distanceSheetOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'flex-end',
+    },
+    distanceSheetBackdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0, 0, 0, 0)',
+    },
+    distanceSheet: {
+      backgroundColor: palette.white,
+      borderTopLeftRadius: 18,
+      borderTopRightRadius: 18,
+      paddingBottom: 16,
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      height: 260,
+      shadowColor: palette.black,
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 8,
+      elevation: 12,
+    },
+    distanceSheetHandle: {
+      alignSelf: 'center',
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: palette.neutralLight,
+      marginBottom: 8,
+    },
+    distanceSheetTitle: {
+      ...typography.body,
+      color: palette.textPrimary,
+      fontWeight: '600',
+      marginBottom: 8,
+    },
+    distanceSheetItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.border,
+    },
+    distanceSheetText: {
+      ...typography.body,
+      color: palette.textPrimary,
+    },
+    distanceSheetTextActive: {
+      color: palette.primary,
+      fontWeight: '600',
+    },
+    emptyState: {
+      alignItems: 'center',
+      padding: 40,
+    },
+    emptyStateTitle: {
+      ...typography.h3,
+      color: palette.textSecondary,
+      marginTop: 20,
+      marginBottom: 10,
+    },
+    emptyStateText: {
+      ...typography.body,
+      color: palette.textSecondary,
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+    loadMoreButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: palette.neutralLight,
+      paddingVertical: 15,
+      borderRadius: 12,
+      marginHorizontal: 20,
+      marginTop: 10,
+    },
+    loadMoreText: {
+      ...typography.body,
+      color: palette.primary,
+      fontWeight: '600',
+      marginRight: 8,
+    },
+  }));
   const [refreshing, setRefreshing] = useState(false);
   const [feedData, setFeedData] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -168,16 +704,29 @@ export default function NewsFeedScreen({ navigation }) {
   const userLat = location?.latitude ?? user?.last_known_lat ?? null;
   const userLon = location?.longitude ?? user?.last_known_lng ?? null;
 
+  const categoryColors = useMemo(
+    () => ({
+      crime: colors.secondary,
+      event: colors.warning,
+      accident: '#EA580C',
+      environment: colors.accent,
+      politics: '#7C3AED',
+      infrastructure: '#4F46E5',
+      other: colors.textSecondary,
+    }),
+    [colors]
+  );
+
   const categories = useMemo(
     () => [
-      { id: null, label: 'All', icon: 'earth' },
+      { id: null, label: t('newsfeed.categoryAll'), icon: 'earth' },
       ...(fetchedCategories || []).map(cat => ({
         id: cat.slug,
         label: cat.label,
         icon: cat.icon || 'shape',
       })),
     ],
-    [fetchedCategories]
+    [fetchedCategories, t]
   );
 
   // Calculate distance and add to feed data
@@ -248,7 +797,7 @@ export default function NewsFeedScreen({ navigation }) {
             if (item.id === updatedId) {
               return {
                 ...item,
-                ...transformApiReport(updatedReport),
+                ...transformApiReport(updatedReport, t),
               };
             }
             return item;
@@ -261,12 +810,12 @@ export default function NewsFeedScreen({ navigation }) {
   // Handle delete report
   const handleDeleteReport = (report) => {
     Alert.alert(
-      'Delete Report',
-      'Are you sure you want to delete this report? This action cannot be undone.',
+      t('newsfeed.delete'),
+      t('newsfeed.deleteReportConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('newsfeed.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('newsfeed.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -274,10 +823,10 @@ export default function NewsFeedScreen({ navigation }) {
               await reportsAPI.deleteReport(reportId);
               // Remove from local state
               setFeedData(prev => prev.filter(item => item.id !== report.id));
-              Alert.alert('Success', 'Report deleted successfully');
+              Alert.alert(t('newsfeed.reportDeleted'));
             } catch (error) {
               console.error('Delete error:', error);
-              Alert.alert('Error', 'Failed to delete report. Please try again.');
+              Alert.alert(t('newsfeed.errorTitle'), t('newsfeed.deleteFailed'));
             }
           },
         },
@@ -320,12 +869,12 @@ export default function NewsFeedScreen({ navigation }) {
   // Show options menu for user's own reports
   const showReportOptions = (report) => {
     Alert.alert(
-      'Report Options',
-      'What would you like to do?',
+      t('newsfeed.reportOptionsTitle'),
+      t('newsfeed.reportOptionsBody'),
       [
-        { text: 'Edit Report', onPress: () => handleEditReport(report) },
-        { text: 'Delete Report', style: 'destructive', onPress: () => handleDeleteReport(report) },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('newsfeed.editReport'), onPress: () => handleEditReport(report) },
+        { text: t('newsfeed.delete'), style: 'destructive', onPress: () => handleDeleteReport(report) },
+        { text: t('newsfeed.cancel'), style: 'cancel' },
       ]
     );
   };
@@ -351,7 +900,7 @@ export default function NewsFeedScreen({ navigation }) {
         : [];
 
       // Transform verified API reports to feed format
-      const transformedReports = verifiedReports.map(transformApiReport);
+      const transformedReports = verifiedReports.map((report) => transformApiReport(report, t));
 
       setFeedData(transformedReports);
     } catch (error) {
@@ -463,7 +1012,11 @@ export default function NewsFeedScreen({ navigation }) {
 
   const renderTrendingSection = () => {
     const trendingItems = feedData.filter(item => item.isTrending);
-    const fallbackItems = trendingItems.length > 0 ? trendingItems : feedData.slice(0, 4);
+    // Sort by views (reportsCount) descending - highest first
+    const sortedByViews = [...feedData].sort((a, b) => (b.reportsCount || 0) - (a.reportsCount || 0));
+    const fallbackItems = trendingItems.length > 0
+      ? trendingItems.sort((a, b) => (b.reportsCount || 0) - (a.reportsCount || 0)).slice(0, 4)
+      : sortedByViews.slice(0, 4);
 
     if (fallbackItems.length === 0) {
       return null;
@@ -472,15 +1025,12 @@ export default function NewsFeedScreen({ navigation }) {
     return (
       <View style={styles.trendingSection}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>TRENDING NOW</Text>
+          <Text style={styles.sectionTitle}>{t('newsfeed.trendingNow')}</Text>
           <View style={styles.sectionActions}>
             <TouchableOpacity onPress={() => setShowDistanceSheet(true)}>
               <Text style={styles.distanceFilterText}>
-                Filter by Distance{distanceRange ? ` • ${distanceRange} km` : ''}
+                {t('newsfeed.filterByDistance')}{distanceRange ? ` • ${distanceRange} km` : ''}
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -501,7 +1051,7 @@ export default function NewsFeedScreen({ navigation }) {
               <View style={styles.trendingOverlay}>
                 <View style={styles.trendingBadge}>
                   <Icon name="fire" size={16} color={colors.white} />
-                  <Text style={styles.trendingBadgeText}>TRENDING</Text>
+                  <Text style={styles.trendingBadgeText}>{t('newsfeed.trendingBadge')}</Text>
                 </View>
                 <Text style={styles.trendingTitle} numberOfLines={2}>
                   {item.title}
@@ -509,7 +1059,7 @@ export default function NewsFeedScreen({ navigation }) {
                 <View style={styles.trendingMeta}>
                   <Icon name="map-marker" size={12} color={colors.white} />
                   <Text style={styles.trendingLocation} numberOfLines={2} ellipsizeMode="tail">
-                    {item.location || 'Unknown location'}
+                    {item.location || t('newsfeed.unknownLocation')}
                   </Text>
                 </View>
               </View>
@@ -535,13 +1085,13 @@ export default function NewsFeedScreen({ navigation }) {
             <Image source={{ uri: item.user.avatar }} style={styles.userAvatar} />
           ) : (
             <View style={styles.anonymousAvatar}>
-              <Icon name="incognito" size={20} color={colors.neutralMedium} />
+              <Icon name="incognito" size={20} color={colors.textSecondary} />
             </View>
           )}
           <View style={styles.userInfo}>
             <View style={styles.userNameContainer}>
               <Text style={styles.userName}>
-                {item.user?.name || 'Anonymous User'}
+                {item.user?.name || t('profile.anonymous')}
               </Text>
               {item.user?.isVerified && (
                 <Icon name="check-decagram" size={16} color={colors.accent} />
@@ -552,7 +1102,7 @@ export default function NewsFeedScreen({ navigation }) {
 
           <View style={[
             styles.categoryBadge,
-            { backgroundColor: categoryColors[item.category] || colors.neutralMedium }
+            { backgroundColor: categoryColors[item.category] || colors.textSecondary }
           ]}>
             <Text style={styles.categoryText}>{item.category}</Text>
           </View>
@@ -577,7 +1127,7 @@ export default function NewsFeedScreen({ navigation }) {
           {isOwner && (
             <View style={styles.ownerBadge}>
               <Icon name="account" size={10} color={colors.white} />
-              <Text style={styles.ownerBadgeText}>Your Report</Text>
+              <Text style={styles.ownerBadgeText}>{t('newsfeed.yourReport')}</Text>
             </View>
           )}
           {/* Nearby distance badge - green badge on bottom-left */}
@@ -593,8 +1143,10 @@ export default function NewsFeedScreen({ navigation }) {
 
         <View style={styles.feedFooter}>
           <View style={styles.locationInfo}>
-            <Icon name="map-marker" size={14} color={colors.neutralMedium} />
-            <Text style={styles.locationText} numberOfLines={1}>{item.location || 'Unknown'}</Text>
+            <Icon name="map-marker" size={14} color={colors.textSecondary} />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {item.location || t('newsfeed.unknownLocation')}
+            </Text>
             {null}
           </View>
 
@@ -604,11 +1156,11 @@ export default function NewsFeedScreen({ navigation }) {
               <Text style={styles.statText}>{(item.rating || 0).toFixed(1)}</Text>
             </View>
             <View style={styles.statItem}>
-              <Icon name="eye" size={14} color={colors.neutralMedium} />
+              <Icon name="eye" size={14} color={colors.textSecondary} />
               <Text style={styles.statText}>{item.reportsCount}</Text>
             </View>
             <View style={styles.statItem}>
-              <Icon name="comment-outline" size={14} color={colors.neutralMedium} />
+              <Icon name="comment-outline" size={14} color={colors.textSecondary} />
               <Text style={styles.statText}>{item.commentsCount || 0}</Text>
             </View>
           </View>
@@ -623,12 +1175,12 @@ export default function NewsFeedScreen({ navigation }) {
             <Icon
               name={favorites.has(item.id?.replace('api-', '')) ? 'heart' : 'heart-outline'}
               size={20}
-              color={favorites.has(item.id?.replace('api-', '')) ? colors.error : colors.neutralMedium}
+              color={favorites.has(item.id?.replace('api-', '')) ? colors.error : colors.textSecondary}
             />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton}>
-            <Icon name="link-variant" size={20} color={colors.neutralMedium} />
+            <Icon name="link-variant" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
           {/* Edit icon - only for owner */}
@@ -636,7 +1188,7 @@ export default function NewsFeedScreen({ navigation }) {
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleEditReport(item)}>
-              <Icon name="pencil-outline" size={20} color={colors.neutralMedium} />
+              <Icon name="pencil-outline" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
 
@@ -645,11 +1197,11 @@ export default function NewsFeedScreen({ navigation }) {
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleDeleteReport(item)}>
-              <Icon name="trash-can-outline" size={20} color={colors.neutralMedium} />
+              <Icon name="trash-can-outline" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.actionButton}>
-              <Icon name="dots-horizontal" size={20} color={colors.neutralMedium} />
+              <Icon name="dots-horizontal" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
 
@@ -657,7 +1209,7 @@ export default function NewsFeedScreen({ navigation }) {
 
           {/* Comment count */}
           <TouchableOpacity style={styles.commentButton}>
-            <Icon name="comment-outline" size={18} color={colors.neutralMedium} />
+            <Icon name="comment-outline" size={18} color={colors.textSecondary} />
             <Text style={styles.commentCount}>{item.commentsCount || 0}</Text>
           </TouchableOpacity>
 
@@ -665,27 +1217,27 @@ export default function NewsFeedScreen({ navigation }) {
             style={styles.replyButton}
             onPress={() => handleToggleReply(item)}
           >
-            <Icon name="reply" size={18} color={colors.neutralMedium} />
-            <Text style={styles.replyText}>Reply</Text>
+            <Icon name="reply" size={18} color={colors.textSecondary} />
+            <Text style={styles.replyText}>{t('newsfeed.reply')}</Text>
           </TouchableOpacity>
         </View>
 
         {isReplyOpen && (
           <View style={styles.replyPanel}>
             <View style={styles.replyHeader}>
-              <Text style={styles.replyHeaderText}>Comments</Text>
+              <Text style={styles.replyHeaderText}>{t('newsfeed.comments')}</Text>
               {commentLoadingIds.has(reportId) && (
-                <Text style={styles.replyHeaderHint}>Loading…</Text>
+                <Text style={styles.replyHeaderHint}>{t('newsfeed.loading')}</Text>
               )}
             </View>
             <ScrollView style={styles.replyList} nestedScrollEnabled>
               {reportComments.length === 0 && !commentLoadingIds.has(reportId) ? (
-                <Text style={styles.replyEmpty}>No comments yet.</Text>
+                <Text style={styles.replyEmpty}>{t('newsfeed.noComments')}</Text>
               ) : (
                 reportComments.map(comment => (
                   <View key={comment.id} style={styles.replyItem}>
                     <Text style={styles.replyAuthor}>
-                      {comment.user?.name || 'Anonymous'}
+                      {comment.user?.name || t('profile.anonymous')}
                     </Text>
                     <Text style={styles.replyBody}>{comment.content}</Text>
                   </View>
@@ -696,8 +1248,8 @@ export default function NewsFeedScreen({ navigation }) {
               <View style={styles.replyComposer}>
                 <TextInput
                   style={styles.replyInput}
-                  placeholder="Write a comment..."
-                  placeholderTextColor={colors.neutralMedium}
+                  placeholder={t('newsfeed.writeComment')}
+                  placeholderTextColor={colors.textSecondary}
                   value={commentDrafts[reportId] || ''}
                   onChangeText={(text) =>
                     setCommentDrafts(prev => ({ ...prev, [reportId]: text }))
@@ -713,8 +1265,8 @@ export default function NewsFeedScreen({ navigation }) {
               </View>
             ) : (
               <View style={styles.replyDisabled}>
-                <Icon name="comment-off-outline" size={18} color={colors.neutralMedium} />
-                <Text style={styles.replyDisabledText}>Comments are disabled for this report</Text>
+                <Icon name="comment-off-outline" size={18} color={colors.textSecondary} />
+                <Text style={styles.replyDisabledText}>{t('newsfeed.commentsDisabled')}</Text>
               </View>
             )}
           </View>
@@ -723,7 +1275,7 @@ export default function NewsFeedScreen({ navigation }) {
         {item.credibility === 'low' && (
           <View style={styles.credibilityWarning}>
             <Icon name="alert-circle" size={16} color={colors.secondary} />
-            <Text style={styles.credibilityText}>This report has low credibility</Text>
+            <Text style={styles.credibilityText}>{t('newsfeed.credibilityLow')}</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -766,38 +1318,38 @@ export default function NewsFeedScreen({ navigation }) {
       <View style={styles.header}>
         {showSearch ? (
           <View style={styles.searchInputContainer}>
-            <Icon name="magnify" size={20} color={colors.neutralMedium} />
+            <Icon name="magnify" size={20} color={colors.textSecondary} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search reports..."
-              placeholderTextColor={colors.neutralMedium}
+              placeholder={t('newsfeed.searchPlaceholder')}
+              placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoFocus
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Icon name="close-circle" size={20} color={colors.neutralMedium} />
+                <Icon name="close-circle" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
             <TouchableOpacity
               style={styles.searchCloseBtn}
               onPress={() => { setShowSearch(false); setSearchQuery(''); }}
             >
-              <Text style={styles.searchCancelText}>Cancel</Text>
+              <Text style={styles.searchCancelText}>{t('newsfeed.cancel')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            <Text style={styles.headerTitle}>News Feed</Text>
+            <Text style={styles.headerTitle}>{t('newsfeed.headerTitle')}</Text>
             <View style={styles.headerActions}>
               <TouchableOpacity
                 style={styles.searchButton}
                 onPress={() => setShowSearch(true)}
               >
-                <Icon name="magnify" size={24} color={colors.neutralDark} />
+                <Icon name="magnify" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
-              <HeaderNotificationsButton navigation={navigation} />
+              <HeaderNotificationsButton navigation={navigation} colors={colors} styles={styles} />
             </View>
           </>
         )}
@@ -822,7 +1374,7 @@ export default function NewsFeedScreen({ navigation }) {
               <Icon
                 name={category.icon}
                 size={18}
-                color={selectedCategory === category.id ? colors.white : colors.neutralMedium}
+                color={selectedCategory === category.id ? colors.white : colors.textSecondary}
               />
               <Text
                 style={[
@@ -853,10 +1405,10 @@ export default function NewsFeedScreen({ navigation }) {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Icon name="newspaper-variant-outline" size={80} color={colors.neutralLight} />
-            <Text style={styles.emptyStateTitle}>No Reports Found</Text>
+            <Icon name="newspaper-variant-outline" size={80} color={colors.border} />
+            <Text style={styles.emptyStateTitle}>{t('newsfeed.noReports')}</Text>
             <Text style={styles.emptyStateText}>
-              No reports match your selected category. Try another category or check back later.
+              {t('newsfeed.emptyFeedHint')}
             </Text>
           </View>
         }
@@ -866,7 +1418,7 @@ export default function NewsFeedScreen({ navigation }) {
               style={styles.loadMoreButton}
               onPress={() => setVisibleCount((count) => count + 5)}
             >
-              <Text style={styles.loadMoreText}>Load More</Text>
+              <Text style={styles.loadMoreText}>{t('newsfeed.loadMore')}</Text>
               <Icon name="chevron-down" size={20} color={colors.primary} />
             </TouchableOpacity>
           ) : null
@@ -882,14 +1434,14 @@ export default function NewsFeedScreen({ navigation }) {
           />
           <View style={styles.distanceSheet}>
             <View style={styles.distanceSheetHandle} />
-            <Text style={styles.distanceSheetTitle}>Filter by distance</Text>
+            <Text style={styles.distanceSheetTitle}>{t('newsfeed.distanceSheetTitle')}</Text>
             {[
-              { label: 'All distances', value: null },
-              { label: 'Within 2 km', value: 2 },
-              { label: 'Within 5 km', value: 5 },
-              { label: 'Within 10 km', value: 10 },
-              { label: 'Within 25 km', value: 25 },
-              { label: 'Within 50 km', value: 50 },
+              { label: t('newsfeed.distanceAll'), value: null },
+              { label: t('newsfeed.distance2'), value: 2 },
+              { label: t('newsfeed.distance5'), value: 5 },
+              { label: t('newsfeed.distance10'), value: 10 },
+              { label: t('newsfeed.distance25'), value: 25 },
+              { label: t('newsfeed.distance50'), value: 50 },
             ].map(option => (
               <TouchableOpacity
                 key={String(option.value)}
@@ -918,548 +1470,3 @@ export default function NewsFeedScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutralLight,
-  },
-  headerTitle: {
-    ...typography.h2,
-    color: colors.neutralDark,
-  },
-  searchButton: {
-    padding: 5,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  notificationButton: {
-    position: 'relative',
-    marginLeft: 12,
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: colors.secondary,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  notificationBadgeText: {
-    ...typography.small,
-    color: colors.white,
-    fontSize: 10,
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutralLight,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
-    color: colors.neutralDark,
-    paddingVertical: 0,
-  },
-  searchCloseBtn: {
-    marginLeft: 10,
-  },
-  searchCancelText: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  categoriesContainer: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutralLight,
-  },
-  categoriesScroll: {
-    paddingHorizontal: 15,
-  },
-  categoryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutralLight,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  categoryButtonActive: {
-    backgroundColor: colors.primary,
-  },
-  categoryButtonText: {
-    /* ...typography.caption, */
-    color: colors.neutralMedium,
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-  categoryButtonTextActive: {
-    color: colors.white,
-  },
-  trendingSection: {
-    marginBottom: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    ...typography.body,
-    color: colors.neutralDark,
-    fontWeight: '600',
-  },
-  sectionActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  distanceFilterText: {
-    color: colors.neutralMedium,
-    fontWeight: '500',
-    marginRight: 12,
-  },
-  seeAllText: {
-    /* ...typography.caption, */
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  trendingList: {
-    paddingLeft: 20,
-  },
-  trendingCard: {
-    width: width * 0.7,
-    height: 180,
-    borderRadius: 12,
-    marginRight: 15,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  trendingImage: {
-    width: '100%',
-    height: '100%',
-  },
-  trendingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    padding: 15,
-    justifyContent: 'flex-end',
-  },
-  trendingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.secondary,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  trendingBadgeText: {
-    ...typography.small,
-    color: colors.white,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  trendingTitle: {
-    ...typography.h3,
-    color: colors.white,
-    marginBottom: 8,
-  },
-  trendingMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  trendingLocation: {
-    /* ...typography.caption, */
-    color: colors.white,
-    marginLeft: 4,
-  },
-  feedList: {
-    paddingBottom: 20,
-  },
-  feedItem: {
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    marginHorizontal: 16,
-    marginBottom: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.neutralLight,
-  },
-  feedHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  userAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 10,
-  },
-  anonymousAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.neutralLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userName: {
-    ...typography.body,
-    color: colors.neutralDark,
-    fontWeight: '600',
-    marginRight: 6,
-  },
-  reportTime: {
-    ...typography.small,
-    color: colors.neutralMedium,
-    marginTop: 2,
-  },
-  categoryBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  categoryText: {
-    ...typography.small,
-    color: colors.white,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  feedTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.neutralDark,
-    marginBottom: 4,
-  },
-  feedDescription: {
-    fontSize: 13,
-    color: colors.neutralMedium,
-    marginBottom: 8,
-    lineHeight: 18,
-  },
-  feedImage: {
-    width: '100%',
-    height: 140,
-    borderRadius: 8,
-  },
-  imageContainer: {
-    position: 'relative',
-    marginBottom: 0,
-  },
-  feedFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-    paddingTop: 0,
-  },
-  locationInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  locationText: {
-    /* ...typography.caption, */
-    color: colors.neutralDark,
-    marginLeft: 6,
-    marginRight: 8,
-  },
-  distanceText: {
-    /* ...typography.caption, */
-    color: colors.neutralMedium,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 15,
-  },
-  statText: {
-    /* ...typography.caption, */
-    color: colors.neutralDark,
-    marginLeft: 4,
-    fontWeight: '600',
-  },
-  credibilityWarning: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: `${colors.secondary}10`,
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 12,
-  },
-  credibilityText: {
-    /* ...typography.caption, */
-    color: colors.secondary,
-    marginLeft: 8,
-    fontWeight: '500',
-  },
-  actionBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: colors.neutralLight,
-  },
-  actionButton: {
-    padding: 4,
-    marginRight: 10,
-  },
-  actionSpacer: {
-    flex: 1,
-  },
-  commentButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  commentCount: {
-    color: colors.neutralMedium,
-    fontSize: 13,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  replyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: colors.neutralLight,
-    borderRadius: 16,
-  },
-  replyText: {
-    color: colors.neutralMedium,
-    fontSize: 13,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  replyPanel: {
-    marginTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.neutralLight,
-    paddingTop: 12,
-  },
-  replyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  replyHeaderText: {
-    ...typography.caption,
-    color: colors.neutralDark,
-    fontWeight: '600',
-  },
-  replyHeaderHint: {
-    ...typography.small,
-    color: colors.neutralMedium,
-  },
-  replyList: {
-    maxHeight: 160,
-    marginBottom: 10,
-  },
-  replyEmpty: {
-    ...typography.small,
-    color: colors.neutralMedium,
-  },
-  replyItem: {
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutralLight,
-  },
-  replyAuthor: {
-    ...typography.small,
-    color: colors.neutralDark,
-    fontWeight: '600',
-  },
-  replyBody: {
-    ...typography.small,
-    color: colors.neutralMedium,
-    marginTop: 2,
-  },
-  replyComposer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutralLight,
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  replyDisabled: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutralLight,
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  replyDisabledText: {
-    ...typography.caption,
-    color: colors.neutralMedium,
-    marginLeft: 8,
-  },
-  replyInput: {
-    flex: 1,
-    color: colors.neutralDark,
-    fontSize: 13,
-    paddingVertical: 0,
-  },
-  replySend: {
-    marginLeft: 8,
-  },
-  ownerBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  ownerBadgeText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  nearbyBadge: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  nearbyBadgeText: {
-    color: colors.white,
-    fontSize: 11,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  distanceSheetOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
-  },
-  distanceSheetBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0)',
-  },
-  distanceSheet: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    height: 260,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 12,
-  },
-  distanceSheetHandle: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.neutralLight,
-    marginBottom: 8,
-  },
-  distanceSheetTitle: {
-    ...typography.body,
-    color: colors.neutralDark,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  distanceSheetItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutralLight,
-  },
-  distanceSheetText: {
-    ...typography.body,
-    color: colors.neutralDark,
-  },
-  distanceSheetTextActive: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  emptyState: {
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyStateTitle: {
-    ...typography.h3,
-    color: colors.neutralMedium,
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  emptyStateText: {
-    ...typography.body,
-    color: colors.neutralMedium,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  loadMoreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.neutralLight,
-    paddingVertical: 15,
-    borderRadius: 12,
-    marginHorizontal: 20,
-    marginTop: 10,
-  },
-  loadMoreText: {
-    ...typography.body,
-    color: colors.primary,
-    fontWeight: '600',
-    marginRight: 8,
-  },
-});

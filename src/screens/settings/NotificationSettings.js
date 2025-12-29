@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, Switch, ScrollView, StyleSheet, Alert } from 'react-native';
 import Card from '../../components/common/Card';
-import { colors, typography, spacing } from '../../theme';
+import { typography, spacing } from '../../theme';
 import { authAPI } from '../../services/api/auth';
 import { useAuth } from '../../hooks/useAuth';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const NotificationSettings = () => {
     const { updateUser } = useAuth();
+    const { t } = useLanguage();
+    const { theme } = useTheme();
+    const colors = theme.colors;
     const [nearbyIncidents, setNearbyIncidents] = useState(true);
     const [reportUpdates, setReportUpdates] = useState(true);
     const [achievements, setAchievements] = useState(true);
@@ -20,6 +25,73 @@ const NotificationSettings = () => {
         allNotifications: true,
     });
     const [isLoading, setIsLoading] = useState(true);
+
+    const styles = useMemo(() => StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: colors.background,
+            padding: spacing.md,
+        },
+        title: {
+            fontSize: typography.sizes.xxl,
+            fontWeight: typography.weights.bold,
+            color: colors.textPrimary,
+            marginBottom: spacing.xl,
+            fontFamily: typography.families.bold,
+        },
+        sectionTitle: {
+            fontSize: typography.sizes.lg,
+            fontWeight: typography.weights.bold,
+            color: colors.textPrimary,
+            marginTop: spacing.xl,
+            marginBottom: spacing.md,
+            fontFamily: typography.families.bold,
+        },
+        setting: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingVertical: spacing.md,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+        },
+        lastSetting: {
+            borderBottomWidth: 0,
+        },
+        settingInfo: {
+            flex: 1,
+            marginRight: spacing.md,
+        },
+        settingTitle: {
+            fontSize: typography.sizes.md,
+            fontWeight: typography.weights.semibold,
+            color: colors.textPrimary,
+            marginBottom: spacing.xs,
+            fontFamily: typography.families.semibold,
+        },
+        settingDescription: {
+            fontSize: typography.sizes.sm,
+            color: colors.textSecondary,
+            fontFamily: typography.families.regular,
+        },
+        alertGrid: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            marginTop: spacing.md,
+            marginHorizontal: -4,
+        },
+        alertToggle: {
+            width: '50%',
+            paddingHorizontal: 4,
+            marginBottom: spacing.md,
+        },
+        alertToggleLabel: {
+            fontSize: typography.sizes.sm,
+            color: colors.textPrimary,
+            marginBottom: spacing.xs,
+            fontFamily: typography.families.medium,
+        },
+    }), [colors]);
 
     const defaults = {
         nearbyIncidents: true,
@@ -85,7 +157,7 @@ const NotificationSettings = () => {
             const response = await authAPI.updateNotificationSettings(payload);
             updateUser({ notification_settings: response.data?.notification_settings || payload });
         } catch (error) {
-            Alert.alert('Error', 'Unable to save notification settings.');
+            Alert.alert(t('reportFlow.addressErrorTitle'), t('notificationSettings.saveError'));
         }
     };
 
@@ -120,14 +192,14 @@ const NotificationSettings = () => {
 
     return (
         <ScrollView style={styles.container}>
-            <Text style={styles.title}>Notification Settings</Text>
+            <Text style={styles.title}>{t('notificationSettings.title')}</Text>
 
             <Card>
                 <View style={styles.setting}>
                     <View style={styles.settingInfo}>
-                        <Text style={styles.settingTitle}>Nearby Incidents</Text>
+                        <Text style={styles.settingTitle}>{t('notificationSettings.nearby')}</Text>
                         <Text style={styles.settingDescription}>
-                            Get notified about incidents happening near you
+                            {t('notificationSettings.nearbyDesc')}
                         </Text>
                     </View>
                     <Switch
@@ -145,9 +217,9 @@ const NotificationSettings = () => {
 
                 <View style={styles.setting}>
                     <View style={styles.settingInfo}>
-                        <Text style={styles.settingTitle}>Report Updates</Text>
+                        <Text style={styles.settingTitle}>{t('notificationSettings.reportUpdates')}</Text>
                         <Text style={styles.settingDescription}>
-                            Updates on your submitted reports
+                            {t('notificationSettings.reportUpdatesDesc')}
                         </Text>
                     </View>
                     <Switch
@@ -165,9 +237,9 @@ const NotificationSettings = () => {
 
                 <View style={styles.setting}>
                     <View style={styles.settingInfo}>
-                        <Text style={styles.settingTitle}>Achievements</Text>
+                        <Text style={styles.settingTitle}>{t('notificationSettings.achievements')}</Text>
                         <Text style={styles.settingDescription}>
-                            When you unlock new achievements
+                            {t('notificationSettings.achievementsDesc')}
                         </Text>
                     </View>
                     <Switch
@@ -185,9 +257,9 @@ const NotificationSettings = () => {
 
                 <View style={[styles.setting, styles.lastSetting]}>
                     <View style={styles.settingInfo}>
-                        <Text style={styles.settingTitle}>Agency Responses</Text>
+                        <Text style={styles.settingTitle}>{t('notificationSettings.agencyResponses')}</Text>
                         <Text style={styles.settingDescription}>
-                            When agencies respond to reports
+                            {t('notificationSettings.agencyResponsesDesc')}
                         </Text>
                     </View>
                     <Switch
@@ -204,13 +276,13 @@ const NotificationSettings = () => {
                 </View>
             </Card>
 
-            <Text style={styles.sectionTitle}>Alert Notification Settings</Text>
+            <Text style={styles.sectionTitle}>{t('notificationSettings.alerts')}</Text>
             <Card>
                 <View style={styles.setting}>
                     <View style={styles.settingInfo}>
-                        <Text style={styles.settingTitle}>All Alerts</Text>
+                        <Text style={styles.settingTitle}>{t('notificationSettings.all')}</Text>
                         <Text style={styles.settingDescription}>
-                            Toggle alert notifications for incidents
+                            {t('notificationSettings.allDesc')}
                         </Text>
                     </View>
                     <Switch
@@ -222,7 +294,7 @@ const NotificationSettings = () => {
 
                 <View style={styles.alertGrid}>
                     <View style={styles.alertToggle}>
-                        <Text style={styles.alertToggleLabel}>Emergency Alerts</Text>
+                        <Text style={styles.alertToggleLabel}>{t('notificationSettings.emergency')}</Text>
                         <Switch
                             value={alertSettings.emergencyAlerts}
                             onValueChange={() => handleAlertSettingChange('emergencyAlerts')}
@@ -232,7 +304,7 @@ const NotificationSettings = () => {
                     </View>
 
                     <View style={styles.alertToggle}>
-                        <Text style={styles.alertToggleLabel}>Crime Reports</Text>
+                        <Text style={styles.alertToggleLabel}>{t('notificationSettings.crime')}</Text>
                         <Switch
                             value={alertSettings.crimeReports}
                             onValueChange={() => handleAlertSettingChange('crimeReports')}
@@ -242,7 +314,7 @@ const NotificationSettings = () => {
                     </View>
 
                     <View style={styles.alertToggle}>
-                        <Text style={styles.alertToggleLabel}>Disaster Alerts</Text>
+                        <Text style={styles.alertToggleLabel}>{t('notificationSettings.disaster')}</Text>
                         <Switch
                             value={alertSettings.disasterAlerts}
                             onValueChange={() => handleAlertSettingChange('disasterAlerts')}
@@ -252,7 +324,7 @@ const NotificationSettings = () => {
                     </View>
 
                     <View style={styles.alertToggle}>
-                        <Text style={styles.alertToggleLabel}>Celebrations</Text>
+                        <Text style={styles.alertToggleLabel}>{t('notificationSettings.celebrations')}</Text>
                         <Switch
                             value={alertSettings.celebrations}
                             onValueChange={() => handleAlertSettingChange('celebrations')}
@@ -262,7 +334,7 @@ const NotificationSettings = () => {
                     </View>
 
                     <View style={styles.alertToggle}>
-                        <Text style={styles.alertToggleLabel}>Political Events</Text>
+                        <Text style={styles.alertToggleLabel}>{t('notificationSettings.political')}</Text>
                         <Switch
                             value={alertSettings.politicalEvents}
                             onValueChange={() => handleAlertSettingChange('politicalEvents')}
@@ -275,72 +347,5 @@ const NotificationSettings = () => {
         </ScrollView>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-        padding: spacing.md,
-    },
-    title: {
-        fontSize: typography.sizes.xxl,
-        fontWeight: typography.weights.bold,
-        color: colors.textPrimary,
-        marginBottom: spacing.xl,
-        fontFamily: typography.families.bold,
-    },
-    sectionTitle: {
-        fontSize: typography.sizes.lg,
-        fontWeight: typography.weights.bold,
-        color: colors.textPrimary,
-        marginTop: spacing.xl,
-        marginBottom: spacing.md,
-        fontFamily: typography.families.bold,
-    },
-    setting: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-    },
-    lastSetting: {
-        borderBottomWidth: 0,
-    },
-    settingInfo: {
-        flex: 1,
-        marginRight: spacing.md,
-    },
-    settingTitle: {
-        fontSize: typography.sizes.md,
-        fontWeight: typography.weights.semibold,
-        color: colors.textPrimary,
-        marginBottom: spacing.xs,
-        fontFamily: typography.families.semibold,
-    },
-    settingDescription: {
-        fontSize: typography.sizes.sm,
-        color: colors.textSecondary,
-        fontFamily: typography.families.regular,
-    },
-    alertGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginTop: spacing.md,
-        marginHorizontal: -4,
-    },
-    alertToggle: {
-        width: '50%',
-        paddingHorizontal: 4,
-        marginBottom: spacing.md,
-    },
-    alertToggleLabel: {
-        fontSize: typography.sizes.sm,
-        color: colors.textPrimary,
-        marginBottom: spacing.xs,
-        fontFamily: typography.families.medium,
-    },
-});
 
 export default NotificationSettings;

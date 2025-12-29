@@ -9,9 +9,10 @@
         
         <div class="footer-column">
           <h4 class="footer-heading">Quick Links</h4>
-          <a href="#" class="footer-link">About Us</a>
-          <a href="#" class="footer-link">How It Works</a>
-          <a href="#" class="footer-link">Contact</a>
+          <a href="#news" class="footer-link">Latest Reports</a>
+          <a href="#features" class="footer-link">How It Works</a>
+          <a href="#about" class="footer-link">About Omni247</a>
+          <a href="#contact" class="footer-link">Contact</a>
         </div>
         
         <div class="footer-column">
@@ -29,6 +30,7 @@
           <a href="#" class="app-button">
             <span>🤖</span> Play Store
           </a>
+          <span class="footer-note">Mobile app coming soon for all regions.</span>
         </div>
       </div>
       
@@ -130,6 +132,12 @@
 
 .app-button:hover {
   background: #475569;
+}
+
+.footer-note {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.4;
 }
 
 .footer-bottom {

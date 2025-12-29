@@ -2,19 +2,20 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Image,
   FlatList,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { colors, typography } from '../../theme/colors';
+import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { rewardsAPI } from '../../services/api/rewards';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import useThemedStyles from '../../theme/useThemedStyles';
 
 
 
@@ -28,6 +29,241 @@ const rewards = [
 
 
 export default function RewardsScreen({ navigation }) {
+  const { t } = useLanguage();
+  const { theme } = useTheme();
+  const colors = theme.colors;
+  const styles = useThemedStyles((palette) => ({
+    container: {
+      flex: 1,
+      backgroundColor: palette.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      paddingTop: 18,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.border,
+    },
+    headerTitle: {
+      ...typography.h3,
+      color: palette.textPrimary,
+    },
+    content: {
+      padding: 14,
+      paddingBottom: 28,
+    },
+    tierCard: {
+      borderRadius: 14,
+      padding: 16,
+      marginBottom: 18,
+    },
+    tierHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 14,
+    },
+    tierName: {
+      ...typography.h3,
+      color: palette.textPrimary,
+      marginLeft: 12,
+    },
+    tierPoints: {
+      ...typography.body,
+      color: palette.textSecondary,
+      marginLeft: 12,
+    },
+    progressContainer: {
+      marginTop: 10,
+    },
+    progressLabels: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    progressText: {
+      ...typography.caption,
+      color: palette.textPrimary,
+    },
+    progressBar: {
+      height: 8,
+      backgroundColor: palette.neutralLight,
+      borderRadius: 4,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: 4,
+    },
+    section: {
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      ...typography.h3,
+      color: palette.textPrimary,
+      marginBottom: 12,
+    },
+    badgesList: {
+      paddingRight: 20,
+    },
+    badgeItem: {
+      alignItems: 'center',
+      marginRight: 14,
+      width: 70,
+    },
+    badgeIconContainer: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 8,
+      position: 'relative',
+    },
+    lockIcon: {
+      position: 'absolute',
+      bottom: 5,
+      right: 5,
+    },
+    badgeName: {
+      ...typography.caption,
+      color: palette.textPrimary,
+      textAlign: 'center',
+      marginBottom: 4,
+    },
+    badgeStatus: {
+      ...typography.small,
+      color: palette.textSecondary,
+    },
+    rewardCard: {
+      flexDirection: 'row',
+      backgroundColor: palette.white,
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: palette.border,
+    },
+    rewardGradient: {
+      width: 68,
+      height: 68,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    rewardPoints: {
+      ...typography.caption,
+      color: palette.primary,
+      marginTop: 5,
+      fontWeight: '600',
+    },
+    rewardInfo: {
+      flex: 1,
+      justifyContent: 'space-between',
+    },
+    rewardName: {
+      ...typography.body,
+      color: palette.textPrimary,
+      fontWeight: '600',
+      marginBottom: 4,
+    },
+    rewardDescription: {
+      ...typography.caption,
+      color: palette.textSecondary,
+      marginBottom: 10,
+    },
+    redeemButton: {
+      backgroundColor: palette.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      alignSelf: 'flex-start',
+    },
+    redeemButtonText: {
+      ...typography.caption,
+      color: palette.white,
+      fontWeight: '600',
+    },
+    activityItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.border,
+    },
+    activityIcon: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: `${palette.accent}20`,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 10,
+    },
+    activityInfo: {
+      flex: 1,
+    },
+    activityAction: {
+      ...typography.body,
+      color: palette.textPrimary,
+    },
+    activityTime: {
+      ...typography.small,
+      color: palette.textSecondary,
+      marginTop: 2,
+    },
+    activityPoints: {
+      ...typography.body,
+      color: palette.accent,
+      fontWeight: '600',
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 60,
+    },
+    loadingText: {
+      marginTop: 16,
+      color: palette.textSecondary,
+      ...typography.body,
+    },
+    emptyStateContainer: {
+      alignItems: 'center',
+      paddingVertical: 40,
+      paddingHorizontal: 20,
+    },
+    emptyStateText: {
+      marginTop: 16,
+      fontSize: 16,
+      fontWeight: '600',
+      color: palette.textPrimary,
+    },
+    emptyStateCaption: {
+      marginTop: 8,
+      textAlign: 'center',
+      color: palette.textSecondary,
+      ...typography.caption,
+    },
+    showMoreButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      marginTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: palette.border,
+    },
+    showMoreText: {
+      color: palette.primary,
+      fontWeight: '600',
+      marginRight: 4,
+      ...typography.body,
+    },
+  }));
   const [userPoints, setUserPoints] = useState(0);
   const [activities, setActivities] = useState([]);
   const [badges, setBadges] = useState([]);
@@ -108,13 +344,13 @@ export default function RewardsScreen({ navigation }) {
         <Icon
           name={item.icon}
           size={24}
-          color={item.earned ? item.color : colors.neutralMedium}
+          color={item.earned ? item.color : colors.textSecondary}
         />
         {!item.earned && (
           <Icon
             name="lock"
             size={10}
-            color={colors.neutralMedium}
+            color={colors.textSecondary}
             style={styles.lockIcon}
           />
         )}
@@ -144,7 +380,7 @@ export default function RewardsScreen({ navigation }) {
           ]}
           disabled={userPoints < item.points}>
           <Text style={styles.redeemButtonText}>
-            {userPoints >= item.points ? 'Redeem' : 'Need more points'}
+            {userPoints >= item.points ? t('rewards.redeem') : t('rewards.needMorePoints')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -178,11 +414,11 @@ export default function RewardsScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color={colors.neutralDark} />
+          <Icon name="arrow-left" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Rewards</Text>
+          <Text style={styles.headerTitle}>{t('rewards.title')}</Text>
         <TouchableOpacity>
-          <Icon name="help-circle-outline" size={24} color={colors.neutralDark} />
+          <Icon name="help-circle-outline" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -195,7 +431,7 @@ export default function RewardsScreen({ navigation }) {
         {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Loading rewards...</Text>
+            <Text style={styles.loadingText}>{t('rewards.loading')}</Text>
           </View>
         ) : (
           <>
@@ -240,7 +476,7 @@ export default function RewardsScreen({ navigation }) {
 
             {/* Badges Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Badges</Text>
+              <Text style={styles.sectionTitle}>{t('rewards.badges')}</Text>
               <FlatList
                 data={badges}
                 renderItem={renderBadge}
@@ -253,7 +489,7 @@ export default function RewardsScreen({ navigation }) {
 
             {/* Available Rewards */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Available Rewards</Text>
+              <Text style={styles.sectionTitle}>{t('rewards.availableRewards')}</Text>
               <FlatList
                 data={rewards}
                 renderItem={renderReward}
@@ -264,13 +500,13 @@ export default function RewardsScreen({ navigation }) {
 
             {/* Recent Activity */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Recent Activity</Text>
+              <Text style={styles.sectionTitle}>{t('rewards.recentActivity')}</Text>
               {activities.length === 0 ? (
                 <View style={styles.emptyStateContainer}>
-                  <Icon name="history" size={40} color={colors.neutralMedium} />
-                  <Text style={styles.emptyStateText}>No recent activity</Text>
+                  <Icon name="history" size={40} color={colors.textSecondary} />
+                  <Text style={styles.emptyStateText}>{t('rewards.noActivity')}</Text>
                   <Text style={styles.emptyStateCaption}>
-                    Complete reports and engage with the community to earn points
+                    {t('rewards.activityHint')}
                   </Text>
                 </View>
               ) : (
@@ -286,7 +522,7 @@ export default function RewardsScreen({ navigation }) {
                       style={styles.showMoreButton}
                       onPress={handleShowMore}
                     >
-                      <Text style={styles.showMoreText}>Show More</Text>
+                      <Text style={styles.showMoreText}>{t('rewards.showMore')}</Text>
                       <Icon name="chevron-down" size={20} color={colors.primary} />
                     </TouchableOpacity>
                   )}
@@ -299,236 +535,3 @@ export default function RewardsScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    paddingTop: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutralLight,
-  },
-  headerTitle: {
-    ...typography.h3,
-    color: colors.neutralDark,
-  },
-  content: {
-    padding: 14,
-    paddingBottom: 28,
-  },
-  tierCard: {
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 18,
-  },
-  tierHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  tierName: {
-    ...typography.h3,
-    color: colors.neutralDark,
-    marginLeft: 12,
-  },
-  tierPoints: {
-    ...typography.body,
-    color: colors.neutralMedium,
-    marginLeft: 12,
-  },
-  progressContainer: {
-    marginTop: 10,
-  },
-  progressLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  progressText: {
-    ...typography.caption,
-    color: colors.neutralDark,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: colors.neutralLight,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.neutralDark,
-    marginBottom: 12,
-  },
-  badgesList: {
-    paddingRight: 20,
-  },
-  badgeItem: {
-    alignItems: 'center',
-    marginRight: 14,
-    width: 70,
-  },
-  badgeIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    position: 'relative',
-  },
-  lockIcon: {
-    position: 'absolute',
-    bottom: 5,
-    right: 5,
-  },
-  badgeName: {
-    ...typography.caption,
-    color: colors.neutralDark,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  badgeStatus: {
-    ...typography.small,
-    color: colors.neutralMedium,
-  },
-  rewardCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.neutralLight,
-  },
-  rewardGradient: {
-    width: 68,
-    height: 68,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  rewardPoints: {
-    ...typography.caption,
-    color: colors.primary,
-    marginTop: 5,
-    fontWeight: '600',
-  },
-  rewardInfo: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  rewardName: {
-    ...typography.body,
-    color: colors.neutralDark,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  rewardDescription: {
-    ...typography.caption,
-    color: colors.neutralMedium,
-    marginBottom: 10,
-  },
-  redeemButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-  },
-  redeemButtonText: {
-    ...typography.caption,
-    color: colors.white,
-    fontWeight: '600',
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutralLight,
-  },
-  activityIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: `${colors.accent}20`,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  activityInfo: {
-    flex: 1,
-  },
-  activityAction: {
-    ...typography.body,
-    color: colors.neutralDark,
-  },
-  activityTime: {
-    ...typography.small,
-    color: colors.neutralMedium,
-    marginTop: 2,
-  },
-  activityPoints: {
-    ...typography.body,
-    color: colors.accent,
-    fontWeight: '600',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  loadingText: {
-    marginTop: 16,
-    color: colors.neutralMedium,
-    ...typography.body,
-  },
-  emptyStateContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-  emptyStateText: {
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.neutralDark,
-  },
-  emptyStateCaption: {
-    marginTop: 8,
-    textAlign: 'center',
-    color: colors.neutralMedium,
-    ...typography.caption,
-  },
-  showMoreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.neutralLight,
-  },
-  showMoreText: {
-    color: colors.primary,
-    fontWeight: '600',
-    marginRight: 4,
-    ...typography.body,
-  },
-});

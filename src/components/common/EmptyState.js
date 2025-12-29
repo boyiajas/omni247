@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { colors, typography, spacing } from '../../theme';
+import { typography, spacing } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const EmptyState = ({
     icon = 'file-tray-outline',
@@ -9,6 +10,34 @@ const EmptyState = ({
     message = 'Nothing to show here',
     action,
 }) => {
+    const { theme } = useTheme();
+    const colors = theme.colors;
+    const styles = useMemo(() => StyleSheet.create({
+        container: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: spacing.xl,
+        },
+        title: {
+            fontSize: typography.sizes.xl,
+            fontWeight: typography.weights.bold,
+            color: colors.textPrimary,
+            marginTop: spacing.md,
+            fontFamily: typography.families.bold,
+        },
+        message: {
+            fontSize: typography.sizes.md,
+            color: colors.textSecondary,
+            marginTop: spacing.sm,
+            textAlign: 'center',
+            fontFamily: typography.families.regular,
+        },
+        action: {
+            marginTop: spacing.lg,
+        },
+    }), [colors]);
+
     return (
         <View style={styles.container}>
             <Icon name={icon} size={64} color={colors.textSecondary} />
@@ -18,31 +47,5 @@ const EmptyState = ({
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: spacing.xl,
-    },
-    title: {
-        fontSize: typography.sizes.xl,
-        fontWeight: typography.weights.bold,
-        color: colors.textPrimary,
-        marginTop: spacing.md,
-        fontFamily: typography.families.bold,
-    },
-    message: {
-        fontSize: typography.sizes.md,
-        color: colors.textSecondary,
-        marginTop: spacing.sm,
-        textAlign: 'center',
-        fontFamily: typography.families.regular,
-    },
-    action: {
-        marginTop: spacing.lg,
-    },
-});
 
 export default EmptyState;

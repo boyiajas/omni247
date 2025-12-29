@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing } from '../../theme';
+import { typography, spacing } from '../../theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const Badge = ({
     text,
@@ -8,6 +9,31 @@ const Badge = ({
     size = 'medium',
     style,
 }) => {
+    const { theme } = useTheme();
+    const colors = theme.colors;
+    const styles = useMemo(() => StyleSheet.create({
+        badge: {
+            paddingHorizontal: spacing.sm,
+            paddingVertical: spacing.xs,
+            borderRadius: 12,
+            alignSelf: 'flex-start',
+        },
+        badgeSmall: {
+            paddingHorizontal: spacing.xs,
+            paddingVertical: 2,
+            borderRadius: 8,
+        },
+        text: {
+            color: colors.white,
+            fontSize: typography.sizes.xs,
+            fontWeight: typography.weights.semibold,
+            fontFamily: typography.families.semibold,
+        },
+        textSmall: {
+            fontSize: 10,
+        },
+    }), [colors]);
+
     const getBadgeColor = () => {
         switch (variant) {
             case 'success':
@@ -41,28 +67,5 @@ const Badge = ({
         </View>
     );
 };
-
-const styles = StyleSheet.create({
-    badge: {
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
-        borderRadius: 12,
-        alignSelf: 'flex-start',
-    },
-    badgeSmall: {
-        paddingHorizontal: spacing.xs,
-        paddingVertical: 2,
-        borderRadius: 8,
-    },
-    text: {
-        color: colors.white,
-        fontSize: typography.sizes.xs,
-        fontWeight: typography.weights.semibold,
-        fontFamily: typography.families.semibold,
-    },
-    textSmall: {
-        fontSize: 10,
-    },
-});
 
 export default Badge;

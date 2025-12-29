@@ -39,7 +39,7 @@ const selectCategory = (slug) => {
   border-bottom: 1px solid #e2e8f0;
   padding: 8px 0;
   position: sticky;
-  top: 56px;
+  top: 112px;
   z-index: 100;
 }
 
@@ -80,5 +80,11 @@ const selectCategory = (slug) => {
   background: #2563eb;
   border-color: #2563eb;
   color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .category-bar {
+    top: 104px;
+  }
 }
 </style>

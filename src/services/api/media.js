@@ -35,17 +35,52 @@ export const mediaAPI = {
     let name = item?.fileName || item?.name;
     if (!name) name = `upload-${Date.now()}.${mime.split('/')[1] || 'jpg'}`;
 
-    let uri = item?.uri;
+    let uri =
+      item?.fileCopyUri
+      || item?.uri
+      || item?.path
+      || item?.filePath
+      || item?.originalPath;
+
+    console.log('[MEDIA UPLOAD] Original URI:', uri);
+
+    if (!uri || typeof uri !== 'string') {
+      throw new Error('Missing media file path.');
+    }
+
+    // ❌ Reject HTTP/HTTPS URLs immediately
+    if (uri.startsWith('http://') || uri.startsWith('https://')) {
+      throw new Error(`Invalid media file path: Cannot upload from URL '${uri}'. Please select a local file.`);
+    }
 
     // ✅ Convert content:// to file:// on Android
     if (Platform.OS === 'android' && uri?.startsWith('content://')) {
-      const ext = (mime.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
-      const destPath = `${RNFS.TemporaryDirectoryPath}/upload-${Date.now()}.${ext}`;
-      await RNFS.copyFile(uri, destPath);
-      uri = destPath; // RNFS.uploadFiles needs path without file:// prefix
+      console.log('[MEDIA UPLOAD] Converting content:// URI');
+      try {
+        const stat = await RNFS.stat(uri);
+        console.log('[MEDIA UPLOAD] RNFS.stat result:', stat);
+
+        if (stat?.originalFilepath) {
+          uri = stat.originalFilepath;
+          console.log('[MEDIA UPLOAD] Using originalFilepath:', uri);
+        } else if (stat?.path) {
+          uri = stat.path;
+          console.log('[MEDIA UPLOAD] Using stat.path:', uri);
+        }
+      } catch (error) {
+        console.log('[MEDIA UPLOAD] RNFS.stat failed, copying file:', error.message);
+        const ext = (mime.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+        const destPath = `${RNFS.TemporaryDirectoryPath}/upload-${Date.now()}.${ext}`;
+        await RNFS.copyFile(uri, destPath);
+        uri = destPath;
+        console.log('[MEDIA UPLOAD] Copied to:', uri);
+      }
     } else if (uri?.startsWith('file://')) {
       uri = uri.replace('file://', '');
+      console.log('[MEDIA UPLOAD] Removed file:// prefix:', uri);
     }
+
+    console.log('[MEDIA UPLOAD] Final filepath:', uri);
 
     // Get auth token
     const token =

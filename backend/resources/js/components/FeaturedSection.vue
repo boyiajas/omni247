@@ -1,5 +1,5 @@
 <template>
-  <section class="featured-section">
+  <section id="featured" class="featured-section">
     <div class="featured-container">
       <div v-if="loading" class="loading">
         <div class="spinner"></div>
@@ -26,12 +26,16 @@
               <span class="meta-item">
                 <span class="icon">👁️</span> {{ formatNumber(featuredReport.views_count) }}
               </span>
+              <span v-if="featuredReport.location" class="meta-divider">•</span>
+              <span v-if="featuredReport.location" class="meta-item">
+                <span class="icon">📍</span> {{ featuredReport.location }}
+              </span>
             </div>
           </div>
         </div>
         
         <div class="featured-sidebar">
-          <h3 class="sidebar-title">More Stories</h3>
+          <h3 class="sidebar-title">More verified updates</h3>
           <div class="sidebar-stories">
             <div
               v-for="report in sideReports"

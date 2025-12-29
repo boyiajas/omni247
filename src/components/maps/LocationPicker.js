@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Button from '../common/Button';
-import { colors, spacing } from '../../theme';
+import { spacing } from '../../theme';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const LocationPicker = ({ initialLocation, onLocationSelect, onCancel }) => {
     const [selectedLocation, setSelectedLocation] = useState(
@@ -11,6 +12,7 @@ const LocationPicker = ({ initialLocation, onLocationSelect, onCancel }) => {
             longitude: -122.4324,
         }
     );
+    const { t } = useLanguage();
 
     const handleMapPress = (event) => {
         setSelectedLocation(event.nativeEvent.coordinate);
@@ -37,13 +39,13 @@ const LocationPicker = ({ initialLocation, onLocationSelect, onCancel }) => {
 
             <View style={styles.buttons}>
                 <Button
-                    title="Cancel"
+                    title={t('common.cancel')}
                     variant="outline"
                     onPress={onCancel}
                     style={styles.button}
                 />
                 <Button
-                    title="Confirm Location"
+                    title={t('common.confirm')}
                     onPress={handleConfirm}
                     style={styles.button}
                 />

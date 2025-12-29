@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { colors } from '../theme';
+import { useFocusEffect } from '@react-navigation/native';
+import { alertsAPI } from '../services/api/alerts';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Main Screens
 import MapScreen from '../screens/main/MapScreen';
@@ -29,6 +32,7 @@ import SettingsScreen from '../screens/settings/SettingsScreen';
 import NotificationSettings from '../screens/settings/NotificationSettings';
 import PrivacySettings from '../screens/settings/PrivacySettings';
 import LanguageSettings from '../screens/settings/LanguageSettings';
+import ThemeSettings from '../screens/settings/ThemeSettings';
 
 // Rewards Screens
 import RewardsScreen from '../screens/rewards/RewardsScreen';
@@ -37,6 +41,9 @@ import RedemptionScreen from '../screens/rewards/RedemptionScreen';
 
 // Profile Screens
 import MyFavoritesScreen from '../screens/profile/MyFavoritesScreen';
+import FAQScreen from '../screens/main/FAQScreen';
+import HelpCenterScreen from '../screens/main/HelpCenterScreen';
+import ContactSupportScreen from '../screens/main/ContactSupportScreen';
 
 // Agency Screens
 import AgencyDashboardScreen from '../screens/agency/AgencyDashboardScreen';
@@ -61,9 +68,9 @@ const MainNavigator = () => {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="MainTabs" component={MainTabs} />
-        <Stack.Screen name="ReportFlow" component={ReportStack} />
-        <Stack.Screen name="EditReport" component={EditReportScreen} />
-        <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+            <Stack.Screen name="ReportFlow" component={ReportStack} />
+            <Stack.Screen name="EditReport" component={EditReportScreen} />
+            <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
             <Stack.Screen name="UserProfile" component={UserProfileScreen} />
             <Stack.Screen name="AgencyDetail" component={AgencyDetailScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
@@ -71,10 +78,14 @@ const MainNavigator = () => {
             <Stack.Screen name="NotificationSettings" component={NotificationSettings} />
             <Stack.Screen name="PrivacySettings" component={PrivacySettings} />
             <Stack.Screen name="LanguageSettings" component={LanguageSettings} />
+            <Stack.Screen name="ThemeSettings" component={ThemeSettings} />
             <Stack.Screen name="Rewards" component={RewardsScreen} />
             <Stack.Screen name="Achievements" component={AchievementsScreen} />
             <Stack.Screen name="Redemption" component={RedemptionScreen} />
             <Stack.Screen name="MyFavorites" component={MyFavoritesScreen} />
+            <Stack.Screen name="FAQ" component={FAQScreen} />
+            <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
+            <Stack.Screen name="ContactSupport" component={ContactSupportScreen} />
             <Stack.Screen name="AgencyDashboard" component={AgencyDashboardScreen} />
             <Stack.Screen name="AgencyAnalytics" component={AgencyAnalyticsScreen} />
             <Stack.Screen name="AgencySettings" component={AgencySettingsScreen} />
@@ -83,6 +94,31 @@ const MainNavigator = () => {
 };
 
 const MainTabs = () => {
+    const [alertsCount, setAlertsCount] = useState(0);
+    const { t } = useLanguage();
+    const { theme } = useTheme();
+    const colors = theme.colors;
+
+    const refreshAlertsCount = async () => {
+        try {
+            const response = await alertsAPI.getAlerts();
+            const payload = response.data || {};
+            const total =
+                (payload.high_priority?.length || 0)
+                + (payload.trending?.length || 0)
+                + (payload.news?.length || 0);
+            setAlertsCount(total);
+        } catch (error) {
+            setAlertsCount(0);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            refreshAlertsCount();
+        }, [])
+    );
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -105,7 +141,7 @@ const MainTabs = () => {
                 tabBarActiveTintColor: colors.primary,
                 tabBarInactiveTintColor: colors.textSecondary,
                 tabBarStyle: {
-                    backgroundColor: '#FFFFFF',
+                    backgroundColor: colors.white,
                     borderTopWidth: 1,
                     borderTopColor: colors.border,
                     paddingBottom: 5,
@@ -116,10 +152,23 @@ const MainTabs = () => {
                     fontWeight: '600',
                 },
             })}>
-            <Tab.Screen name="Map" component={MapScreen} options={{ title: 'Map' }} />
-            <Tab.Screen name="NewsFeed" component={NewsFeedScreen} options={{ title: 'News' }} />
-            <Tab.Screen name="Alerts" component={AlertsScreen} options={{ title: 'Alerts' }} />
-            <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
+            <Tab.Screen name="Map" component={MapScreen} options={{ title: t('tabs.map') }} />
+            <Tab.Screen name="NewsFeed" component={NewsFeedScreen} options={{ title: t('tabs.news') }} />
+            <Tab.Screen
+                name="Alerts"
+                component={AlertsScreen}
+                options={{
+                    title: t('tabs.alerts'),
+                    tabBarBadge: alertsCount > 0 ? alertsCount : undefined,
+                    tabBarBadgeStyle: {
+                        backgroundColor: colors.secondary,
+                        color: colors.white,
+                        fontSize: 10,
+                        fontWeight: '700',
+                    },
+                }}
+            />
+            <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: t('tabs.profile') }} />
         </Tab.Navigator>
     );
 };

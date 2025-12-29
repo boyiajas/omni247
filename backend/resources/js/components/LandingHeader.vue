@@ -9,6 +9,7 @@
       </div>
       
       <nav class="nav-links">
+        <a href="#news" class="nav-link">Reports</a>
         <a href="#features" class="nav-link">Features</a>
         <a href="#about" class="nav-link">About</a>
         <a href="#contact" class="nav-link">Contact</a>

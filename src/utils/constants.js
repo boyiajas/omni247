@@ -1,4 +1,4 @@
-// Utility constants for the G-iReport application
+// Utility constants for the Omni247 application
 
 export const REPORT_CATEGORIES = {
     CRIME: {

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
@@ -13,10 +12,13 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { colors, typography } from '../../theme/colors';
+import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import useThemedStyles from '../../theme/useThemedStyles';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -24,16 +26,149 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login, anonymousLogin } = useAuth();
+  const { t } = useLanguage();
+  const { theme } = useTheme();
+  const colors = theme.colors;
+  const styles = useThemedStyles(() => ({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    keyboardAvoid: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: 20,
+      paddingVertical: 40,
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: 40,
+    },
+    logo: {
+      width: 120,
+      height: 120,
+      marginBottom: 20,
+    },
+    welcomeText: {
+      color: colors.neutralDark,
+      marginBottom: 10,
+    },
+    subtitle: {
+      color: colors.neutralMedium,
+    },
+    form: {
+      width: '100%',
+    },
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.neutralLight,
+      borderRadius: 12,
+      paddingHorizontal: 15,
+      marginBottom: 15,
+      borderWidth: 1,
+      borderColor: colors.neutralLight,
+    },
+    inputIcon: {
+      marginRight: 10,
+    },
+    input: {
+      flex: 1,
+      height: 50,
+      color: colors.neutralDark,
+    },
+    forgotPassword: {
+      alignSelf: 'flex-end',
+      marginBottom: 25,
+    },
+    forgotPasswordText: {
+      ...typography.caption,
+      color: colors.primary,
+    },
+    loginButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      height: 50,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    loginButtonDisabled: {
+      opacity: 0.7,
+    },
+    loginButtonText: {
+      color: colors.white,
+      fontWeight: '600',
+    },
+    divider: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 20,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.neutralLight,
+    },
+    dividerText: {
+      ...typography.caption,
+      color: colors.neutralMedium,
+      marginHorizontal: 10,
+    },
+    googleButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.neutralLight,
+      borderRadius: 12,
+      height: 50,
+      marginBottom: 15,
+      borderWidth: 1,
+      borderColor: colors.neutralLight,
+    },
+    googleButtonText: {
+      color: colors.neutralDark,
+      marginLeft: 10,
+      fontWeight: '500',
+    },
+    anonymousButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.neutralDark,
+      borderRadius: 12,
+      height: 50,
+      marginBottom: 30,
+    },
+    anonymousButtonText: {
+      color: colors.white,
+      marginLeft: 10,
+      fontWeight: '500',
+    },
+    registerContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    registerText: {
+      color: colors.neutralMedium,
+    },
+    registerLink: {
+      color: colors.primary,
+      fontWeight: '600',
+    },
+  }));
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      Alert.alert('Validation Error', 'Please enter both email and password');
+      Alert.alert(t('auth.validationTitle'), t('auth.validationMissingCredentials'));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Validation Error', 'Please enter a valid email address');
+      Alert.alert(t('auth.validationTitle'), t('auth.validationInvalidEmail'));
       return;
     }
 
@@ -47,12 +182,12 @@ export default function LoginScreen({ navigation }) {
         console.log('Login successful');
       } else {
         Alert.alert(
-          'Login Failed',
-          result.error || 'Invalid credentials. Please try again.',
+          t('auth.loginFailedTitle'),
+          result.error || t('auth.loginFailedBody'),
           [
-            { text: 'OK' },
+            { text: t('common.ok') },
             {
-              text: 'Use Demo Account',
+              text: t('auth.useDemoAccount'),
               onPress: () => handleDemoLogin(),
             },
           ]
@@ -61,12 +196,12 @@ export default function LoginScreen({ navigation }) {
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert(
-        'Login Error',
-        'Unable to connect to the server. Would you like to use a demo account?',
+        t('auth.loginErrorTitle'),
+        t('auth.loginErrorBody'),
         [
-          { text: 'Retry', onPress: () => handleLogin() },
+          { text: t('auth.retry'), onPress: () => handleLogin() },
           {
-            text: 'Use Demo',
+            text: t('auth.useDemoShort'),
             onPress: () => handleDemoLogin(),
           },
         ]
@@ -82,7 +217,7 @@ export default function LoginScreen({ navigation }) {
       // Demo user data
       const demoUser = {
         id: 'demo_123',
-        name: 'Demo User',
+        name: t('auth.demoUserName'),
         email: 'demo@gireport.com',
         is_verified: true,
         is_anonymous: false,
@@ -96,10 +231,10 @@ export default function LoginScreen({ navigation }) {
       // Use AuthContext login with demo credentials
       await login(demoUser, demoToken);
 
-      Alert.alert('Demo Mode', 'You are now using a demo account');
+      Alert.alert(t('auth.demoModeTitle'), t('auth.demoModeBody'));
     } catch (error) {
       console.error('Demo login error:', error);
-      Alert.alert('Error', 'Failed to login with demo account');
+      Alert.alert(t('auth.errorTitle'), t('auth.demoLoginError'));
     } finally {
       setLoading(false);
     }
@@ -132,8 +267,8 @@ export default function LoginScreen({ navigation }) {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.welcomeText}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue reporting</Text>
+            <Text style={styles.welcomeText}>{t('auth.welcomeBack')}</Text>
+            <Text style={styles.subtitle}>{t('auth.signInSubtitle')}</Text>
           </View>
 
           <View style={styles.form}>
@@ -141,7 +276,7 @@ export default function LoginScreen({ navigation }) {
               <Icon name="email-outline" size={20} color={colors.neutralMedium} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Email Address"
+                placeholder={t('auth.emailPlaceholder')}
                 placeholderTextColor={colors.neutralMedium}
                 value={email}
                 onChangeText={setEmail}
@@ -154,7 +289,7 @@ export default function LoginScreen({ navigation }) {
               <Icon name="lock-outline" size={20} color={colors.neutralMedium} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder={t('auth.passwordPlaceholder')}
                 placeholderTextColor={colors.neutralMedium}
                 value={password}
                 onChangeText={setPassword}
@@ -169,8 +304,8 @@ export default function LoginScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('ForgotPassword')}>
+              <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -180,30 +315,30 @@ export default function LoginScreen({ navigation }) {
               {loading ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.loginButtonText}>Sign In</Text>
+                <Text style={styles.loginButtonText}>{t('auth.signIn')}</Text>
               )}
             </TouchableOpacity>
 
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or continue with</Text>
+              <Text style={styles.dividerText}>{t('auth.orContinueWith')}</Text>
               <View style={styles.dividerLine} />
             </View>
 
             <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
               <Icon name="google" size={20} color={colors.neutralDark} />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
+              <Text style={styles.googleButtonText}>{t('auth.continueWithGoogle')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.anonymousButton} onPress={handleAnonymousLogin}>
               <Icon name="incognito" size={20} color={colors.white} />
-              <Text style={styles.anonymousButtonText}>Continue Anonymously</Text>
+              <Text style={styles.anonymousButtonText}>{t('auth.continueAnonymously')}</Text>
             </TouchableOpacity>
 
             <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>Don't have an account? </Text>
+              <Text style={styles.registerText}>{t('auth.noAccount')}</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.registerLink}>Sign Up</Text>
+                <Text style={styles.registerLink}>{t('auth.signUp')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -212,139 +347,3 @@ export default function LoginScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  keyboardAvoid: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 20,
-  },
-  welcomeText: {
-    /* ...typography.h1, */
-    color: colors.neutralDark,
-    marginBottom: 10,
-  },
-  subtitle: {
-    /* ...typography.body, */
-    color: colors.neutralMedium,
-  },
-  form: {
-    width: '100%',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutralLight,
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: colors.neutralLight,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 50,
-    /*  ...typography.body, */
-    color: colors.neutralDark,
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 25,
-  },
-  forgotPasswordText: {
-    ...typography.caption,
-    color: colors.primary,
-  },
-  loginButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  loginButtonText: {
-    /* ...typography.body, */
-    color: colors.white,
-    fontWeight: '600',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.neutralLight,
-  },
-  dividerText: {
-    ...typography.caption,
-    color: colors.neutralMedium,
-    marginHorizontal: 10,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.neutralLight,
-    borderRadius: 12,
-    height: 50,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: colors.neutralLight,
-  },
-  googleButtonText: {
-    /* ...typography.body, */
-    color: colors.neutralDark,
-    marginLeft: 10,
-    fontWeight: '500',
-  },
-  anonymousButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.neutralDark,
-    borderRadius: 12,
-    height: 50,
-    marginBottom: 30,
-  },
-  anonymousButtonText: {
-    /* ...typography.body, */
-    color: colors.white,
-    marginLeft: 10,
-    fontWeight: '500',
-  },
-  registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  registerText: {
-    /* ...typography.body, */
-    color: colors.neutralMedium,
-  },
-  registerLink: {
-    /*  ...typography.body, */
-    color: colors.primary,
-    fontWeight: '600',
-  },
-});

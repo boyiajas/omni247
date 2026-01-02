@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Report;
 use App\Models\Category;
 use App\Models\ReportView;
-use App\Jobs\ModerateReportJob;
+use App\Jobs\VerifyReportJob;
 use App\Events\EmergencyAlertEvent;
 use Illuminate\Http\Request;
 
@@ -112,6 +112,10 @@ class ReportController extends Controller
             'description' => 'required|string',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
+            'submitter_latitude' => 'nullable|numeric',
+            'submitter_longitude' => 'nullable|numeric',
+            'submitter_accuracy' => 'nullable|numeric',
+            'submitter_location_recorded_at' => 'nullable|date',
             'address' => 'nullable|string',
             'city' => 'nullable|string',
             'country' => 'nullable|string',
@@ -136,8 +140,10 @@ class ReportController extends Controller
             'privacy' => $reportPrivacy,
         ]);
 
-        // Dispatch moderation job
-        ModerateReportJob::dispatch($report);
+        $verificationSettings = app(\App\Services\Verification\VerificationSettings::class);
+        if ($verificationSettings->shouldRunForUser($request->user())) {
+            VerifyReportJob::dispatch($report->id);
+        }
 
         // Broadcast emergency alert if applicable
         if ($report->is_emergency) {
@@ -149,7 +155,7 @@ class ReportController extends Controller
 
     public function show(Request $request, Report $report)
     {
-        $report->load(['user', 'category', 'media', 'ratings']);
+        $report->load(['user', 'category', 'media', 'ratings.user']);
         $report->increment('views_count');
         
         // Only create view record if user is authenticated
@@ -195,6 +201,10 @@ class ReportController extends Controller
             'latitude' => 'sometimes|numeric',
             'longitude' => 'sometimes|numeric',
             'address' => 'sometimes|string',
+            'submitter_latitude' => 'nullable|numeric',
+            'submitter_longitude' => 'nullable|numeric',
+            'submitter_accuracy' => 'nullable|numeric',
+            'submitter_location_recorded_at' => 'nullable|date',
             'priority' => 'sometimes|in:low,medium,high',
         ]);
 

@@ -16,6 +16,7 @@ import {
 import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { reportsAPI } from '../../services/api/reports';
+import { API_BASE_URL } from '../../config/api';
 import { commentsAPI } from '../../services/api/comments';
 import { favoritesAPI } from '../../services/api/favorites';
 import { useAuth } from '../../contexts/AuthContext';
@@ -79,6 +80,9 @@ const formatTimeAgo = (dateString, t) => {
   return t('newsfeed.daysAgo', { count: diffDays });
 };
 
+const formatRatingValue = (value) => (Number(value) || 0).toFixed(1);
+const API_HOST = API_BASE_URL.replace(/\/api\/?$/, '');
+
 // Transform API report to feed format
 const transformApiReport = (report, t) => {
   // Get first media URL if available
@@ -90,19 +94,16 @@ const transformApiReport = (report, t) => {
     console.log('[DEBUG] Original media URL:', mediaUrl);
 
     if (mediaUrl) {
-      // Fix URLs for Android emulator - replace localhost/127.0.0.1 with 10.0.2.2
       mediaUrl = mediaUrl
-        .replace('http://127.0.0.1:8000', 'http://10.0.2.2:8000')
-        .replace('http://localhost:8000', 'http://10.0.2.2:8000')
-        .replace('http://localhost', 'http://10.0.2.2:8000');
+        .replace('http://127.0.0.1:8000', API_HOST)
+        .replace('http://localhost:8000', API_HOST)
+        .replace('http://localhost', API_HOST)
+        .replace('http://10.0.2.2:8000', API_HOST);
 
-      // If it starts with /storage/, prepend the emulator-accessible host
       if (mediaUrl.startsWith('/storage/')) {
-        mediaUrl = `http://10.0.2.2:8000${mediaUrl}`;
-      }
-      // If it's some other relative path, prepend the full storage URL
-      else if (!mediaUrl.startsWith('http')) {
-        mediaUrl = `http://10.0.2.2:8000/storage/${mediaUrl}`;
+        mediaUrl = `${API_HOST}${mediaUrl}`;
+      } else if (!mediaUrl.startsWith('http')) {
+        mediaUrl = `${API_HOST}/storage/${mediaUrl}`;
       }
 
       console.log('[DEBUG] Fixed media URL:', mediaUrl);
@@ -929,6 +930,12 @@ export default function NewsFeedScreen({ navigation }) {
     });
   };
 
+  const handleOpenRatings = (report) => {
+    const reportId = report?.id?.toString().replace('api-', '');
+    if (!reportId) return;
+    navigation.navigate('ReportRatings', { reportId });
+  };
+
   const loadCommentsForReport = async (reportId) => {
     if (!reportId) return;
     if (commentLoadingIds.has(reportId)) return;
@@ -1151,10 +1158,10 @@ export default function NewsFeedScreen({ navigation }) {
           </View>
 
           <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
+            <TouchableOpacity style={styles.statItem} onPress={() => handleOpenRatings(item)}>
               <Icon name="star" size={14} color={colors.warning} />
-              <Text style={styles.statText}>{(item.rating || 0).toFixed(1)}</Text>
-            </View>
+              <Text style={styles.statText}>{formatRatingValue(item.rating)}</Text>
+            </TouchableOpacity>
             <View style={styles.statItem}>
               <Icon name="eye" size={14} color={colors.textSecondary} />
               <Text style={styles.statText}>{item.reportsCount}</Text>

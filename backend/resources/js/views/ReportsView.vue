@@ -14,6 +14,23 @@
                     <option value="resolved">Resolved</option>
                     <option value="rejected">Rejected</option>
                 </select>
+                <select v-model="filters.verification_status" @change="fetchReports()">
+                    <option value="">Auto-verify: All</option>
+                    <option value="none">Auto-verify: Not run</option>
+                    <option value="processing">Auto-verify: Processing</option>
+                    <option value="pending">Auto-verify: Pending</option>
+                    <option value="verified">Auto-verify: Verified</option>
+                    <option value="rejected">Auto-verify: Rejected</option>
+                    <option value="disabled">Auto-verify: Disabled</option>
+                    <option value="failed">Auto-verify: Failed</option>
+                    <option value="skipped">Auto-verify: Skipped</option>
+                </select>
+                <select v-model="filters.verification_tier" @change="fetchReports()">
+                    <option value="">Auto-verify: All tiers</option>
+                    <option v-for="(tier, key) in verificationTiers" :key="key" :value="key">
+                        Auto-verify: {{ tier.label }}
+                    </option>
+                </select>
                 <input type="search" placeholder="Search reports" v-model="filters.search" @input="debouncedSearch" />
             </div>
         </div>
@@ -25,7 +42,9 @@
                     <th>Title</th>
                     <th>Category</th>
                     <th>Status</th>
+                    <th>Auto-Verify</th>
                     <th>Priority</th>
+                    <th>Submitter Distance</th>
                     <th>Reporter</th>
                     <th>Created</th>
                     <th class="actions-col">Actions</th>
@@ -37,7 +56,9 @@
                     <td>{{ report.title }}</td>
                     <td>{{ report.category?.name }}</td>
                     <td><span class="badge" :class="report.status">{{ report.status }}</span></td>
+                    <td>{{ formatVerification(report) }}</td>
                     <td>{{ report.priority }}</td>
+                    <td>{{ formatDistance(report) }}</td>
                     <td>{{ report.user?.name }}</td>
                     <td>{{ new Date(report.created_at).toLocaleString() }}</td>
                     <td>
@@ -45,7 +66,7 @@
                     </td>
                 </tr>
                 <tr v-if="!reports.length">
-                    <td colspan="8" class="empty">No reports found.</td>
+                    <td colspan="10" class="empty">No reports found.</td>
                 </tr>
             </tbody>
         </table>
@@ -65,7 +86,13 @@ import api from '@/services/api';
 
 const reports = ref([]);
 const meta = reactive({ current_page: 1, last_page: 1, total: 0 });
-const filters = reactive({ status: '', search: '' });
+const filters = reactive({
+    status: '',
+    search: '',
+    verification_status: '',
+    verification_tier: '',
+});
+const verificationTiers = ref({});
 let searchTimer;
 const router = useRouter();
 
@@ -91,12 +118,58 @@ const debouncedSearch = () => {
 
 const refreshHandler = () => fetchReports(meta.current_page);
 
+const fetchVerificationConfig = async () => {
+    try {
+        const { data } = await api.get('/admin/report-verification');
+        verificationTiers.value = data.tiers || {};
+    } catch (error) {
+        verificationTiers.value = {};
+    }
+};
+
 const openReport = (report) => {
     router.push({ name: 'report-detail', params: { id: report.id } });
 };
 
+const formatDistance = (report) => {
+    const lat = Number(report.latitude);
+    const lng = Number(report.longitude);
+    const subLat = Number(report.submitter_latitude);
+    const subLng = Number(report.submitter_longitude);
+
+    if (
+        Number.isNaN(lat)
+        || Number.isNaN(lng)
+        || Number.isNaN(subLat)
+        || Number.isNaN(subLng)
+    ) {
+        return '0.00 km';
+    }
+
+    const toRad = (value) => (value * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(subLat - lat);
+    const dLng = toRad(subLng - lng);
+    const a = Math.sin(dLat / 2) ** 2
+        + Math.cos(toRad(lat)) * Math.cos(toRad(subLat)) * Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return `${distance.toFixed(2)} km`;
+};
+
+const formatVerification = (report) => {
+    if (!report.verification_status) {
+        return 'N/A';
+    }
+
+    const score = report.verification_score ?? 0;
+    return `${report.verification_status} (${score})`;
+};
+
 onMounted(() => {
     fetchReports();
+    fetchVerificationConfig();
     window.addEventListener('dashboard-refresh', refreshHandler);
 });
 

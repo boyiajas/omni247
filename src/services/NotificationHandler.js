@@ -3,6 +3,7 @@ import messaging from '@react-native-firebase/messaging';
 import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationService from './NotificationService';
+import { API_BASE_URL } from '../config/api';
 
 const useNotificationHandler = (navigation) => {
   useEffect(() => {
@@ -56,7 +57,7 @@ const useNotificationHandler = (navigation) => {
   const registerTokenToBackend = async (token) => {
     try {
       const userId = await AsyncStorage.getItem('@user_id');
-      const response = await fetch('https://your-api.com/api/notifications/register', {
+      const response = await fetch(`${API_BASE_URL}/notifications/register-device`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

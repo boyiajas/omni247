@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { reportsAPI } from '../../services/api/reports';
 import { commentsAPI } from '../../services/api/comments';
+import { API_BASE_URL } from '../../config/api';
 import Loading from '../../components/common/Loading';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { typography, spacing } from '../../theme';
@@ -156,10 +157,20 @@ const ReportDetailScreen = ({ route, navigation }) => {
             marginTop: 12,
             marginBottom: 6,
         },
+        ratingHeaderRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 6,
+        },
         ratingLabel: {
             fontSize: 12,
             color: palette.textSecondary,
-            marginBottom: 6,
+        },
+        ratingLink: {
+            fontSize: 12,
+            color: palette.primary,
+            fontWeight: typography.weights.semibold,
         },
         ratingRow: {
             flexDirection: 'row',
@@ -427,6 +438,16 @@ const ReportDetailScreen = ({ route, navigation }) => {
         setLiked(!liked);
     };
 
+    const handleOpenRatings = () => {
+        if (!id) {
+            return;
+        }
+        navigation.navigate('ReportRatings', {
+            reportId: id,
+            report,
+        });
+    };
+
     const handleRateReport = async (rating) => {
         if (!id || isOwner) {
             return;
@@ -580,18 +601,20 @@ const ReportDetailScreen = ({ route, navigation }) => {
         other: colors.textSecondary,
     };
     const categoryColor = categoryColors[categoryName.toLowerCase()] || categoryColors.other;
+    const apiHost = API_BASE_URL.replace(/\/api\/?$/, '');
 
     // Get media URL and fix for Android emulator
     let mediaUrl = report.media?.[0]?.url || PLACEHOLDER_IMAGE;
     if (mediaUrl && mediaUrl !== PLACEHOLDER_IMAGE) {
         mediaUrl = mediaUrl
-            .replace('http://127.0.0.1:8000', 'http://10.0.2.2:8000')
-            .replace('http://localhost:8000', 'http://10.0.2.2:8000')
-            .replace('http://localhost', 'http://10.0.2.2:8000');
+            .replace('http://127.0.0.1:8000', apiHost)
+            .replace('http://localhost:8000', apiHost)
+            .replace('http://localhost', apiHost)
+            .replace('http://10.0.2.2:8000', apiHost);
         if (mediaUrl.startsWith('/storage/')) {
-            mediaUrl = `http://10.0.2.2:8000${mediaUrl}`;
+            mediaUrl = `${apiHost}${mediaUrl}`;
         } else if (!mediaUrl.startsWith('http')) {
-            mediaUrl = `http://10.0.2.2:8000/storage/${mediaUrl}`;
+            mediaUrl = `${apiHost}/storage/${mediaUrl}`;
         }
     }
 
@@ -662,12 +685,12 @@ const ReportDetailScreen = ({ route, navigation }) => {
                             <Icon name="eye" size={18} color={colors.textSecondary} />
                             <Text style={styles.statText}>{t('reportDetail.viewsCount', { count: report.views_count || 0 })}</Text>
                         </View>
-                        <View style={styles.statItem}>
+                        <TouchableOpacity style={styles.statItem} onPress={handleOpenRatings}>
                             <Icon name="star" size={18} color={colors.warning} />
                             <Text style={styles.statText}>
                                 {t('reportDetail.ratingValue', { count: parseFloat(report.average_rating || 0).toFixed(1) })}
                             </Text>
-                        </View>
+                        </TouchableOpacity>
                         <View style={styles.statItem}>
                             <Icon name="comment-outline" size={18} color={colors.textSecondary} />
                             <Text style={styles.statText}>{t('reportDetail.commentsCount', { count: comments.length })}</Text>
@@ -675,9 +698,14 @@ const ReportDetailScreen = ({ route, navigation }) => {
                     </View>
 
                     <View style={styles.ratingSection}>
-                        <Text style={styles.ratingLabel}>
-                            {isOwner ? t('reportDetail.ownerRating') : t('reportDetail.rateReport')}
-                        </Text>
+                        <View style={styles.ratingHeaderRow}>
+                            <Text style={styles.ratingLabel}>
+                                {isOwner ? t('reportDetail.ownerRating') : t('reportDetail.rateReport')}
+                            </Text>
+                            <TouchableOpacity onPress={handleOpenRatings}>
+                                <Text style={styles.ratingLink}>{t('reportDetail.viewReviews') || 'View reviews'}</Text>
+                            </TouchableOpacity>
+                        </View>
                         <View style={styles.ratingRow}>
                             {[1, 2, 3, 4, 5].map((value) => (
                                 <TouchableOpacity

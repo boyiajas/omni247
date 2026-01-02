@@ -30,6 +30,25 @@
                 </div>
             </div>
 
+            <div class="location-grid">
+                <div class="location-card">
+                    <p class="stat-label">Report location</p>
+                    <p class="stat-value">{{ report.address || report.city || 'No address' }}</p>
+                    <p class="muted small">
+                        {{ formatCoords(report.latitude, report.longitude) }}
+                    </p>
+                </div>
+                <div class="location-card">
+                    <p class="stat-label">Submitter location</p>
+                    <p class="stat-value">
+                        {{ formatCoords(report.submitter_latitude, report.submitter_longitude) }}
+                    </p>
+                    <p class="muted small">
+                        {{ formatSubmitterDistance(report) }}
+                    </p>
+                </div>
+            </div>
+
             <div class="actions">
                 <button @click="moderate('verified', { is_verified: true })">Mark Verified</button>
                 <button @click="moderate('investigating')">Investigating</button>
@@ -37,6 +56,38 @@
                 <button class="danger" @click="moderate('rejected')">Reject</button>
                 <button class="ghost" @click="deleteReport">Delete Report</button>
             </div>
+        </div>
+
+        <div class="panel">
+            <h3>Auto-verification</h3>
+            <div class="stats">
+                <div>
+                    <p class="stat-label">Status</p>
+                    <p class="stat-value">{{ report.verification_status || 'Not run' }}</p>
+                </div>
+                <div>
+                    <p class="stat-label">Tier</p>
+                    <p class="stat-value">{{ report.verification_tier || 'N/A' }}</p>
+                </div>
+                <div>
+                    <p class="stat-label">Score</p>
+                    <p class="stat-value">{{ report.verification_score ?? '0' }}</p>
+                </div>
+            </div>
+            <div v-if="report.verification_breakdown?.length" class="verification-list">
+                <div v-for="level in report.verification_breakdown" :key="level.key" class="verification-item">
+                    <p class="list-title">{{ level.label }}</p>
+                    <p class="muted">{{ level.score }} / {{ level.max_score }}</p>
+                    <ul v-if="level.notes?.length" class="notes">
+                        <li v-for="note in level.notes" :key="note">{{ note }}</li>
+                    </ul>
+                    <div v-if="level.signals && Object.keys(level.signals).length" class="signals">
+                        <p class="muted small">Signals</p>
+                        <pre>{{ formatSignals(level.signals) }}</pre>
+                    </div>
+                </div>
+            </div>
+            <p v-else class="muted">No verification data available.</p>
         </div>
 
         <div class="panel">
@@ -143,8 +194,54 @@ const openMedia = (url) => {
     selectedImage.value = url;
 };
 
+const formatCoords = (lat, lng) => {
+    if (lat === null || lat === undefined || lng === null || lng === undefined) {
+        return 'Unavailable';
+    }
+    const latNum = Number(lat);
+    const lngNum = Number(lng);
+    if (Number.isNaN(latNum) || Number.isNaN(lngNum)) {
+        return 'Unavailable';
+    }
+    return `${latNum.toFixed(6)}, ${lngNum.toFixed(6)}`;
+};
+
+const formatSubmitterDistance = (reportValue) => {
+    const lat = Number(reportValue?.latitude);
+    const lng = Number(reportValue?.longitude);
+    const subLat = Number(reportValue?.submitter_latitude);
+    const subLng = Number(reportValue?.submitter_longitude);
+    if (
+        Number.isNaN(lat)
+        || Number.isNaN(lng)
+        || Number.isNaN(subLat)
+        || Number.isNaN(subLng)
+    ) {
+        return '0.00 km';
+    }
+
+    const toRad = (value) => (value * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(subLat - lat);
+    const dLng = toRad(subLng - lng);
+    const a = Math.sin(dLat / 2) ** 2
+        + Math.cos(toRad(lat)) * Math.cos(toRad(subLat)) * Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return `${distance.toFixed(2)} km`;
+};
+
 const closeModal = () => {
     selectedImage.value = null;
+};
+
+const formatSignals = (signals) => {
+    try {
+        return JSON.stringify(signals, null, 2);
+    } catch (error) {
+        return String(signals);
+    }
 };
 
 const handleImageError = (event, media) => {
@@ -202,6 +299,24 @@ onMounted(fetchReport);
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     margin: 16px 0;
+}
+
+.location-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.location-card {
+    padding: 12px;
+    border-radius: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.small {
+    font-size: 12px;
 }
 
 .stat-label {
@@ -307,6 +422,38 @@ onMounted(fetchReport);
     color: #0ea5e9;
     font-weight: 600;
     text-align: center;
+}
+
+.verification-list {
+    display: grid;
+    gap: 8px;
+}
+
+.verification-item {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.notes {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    color: #475569;
+    font-size: 12px;
+}
+
+.signals {
+    margin-top: 8px;
+}
+
+.signals pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    overflow: auto;
 }
 
 .comments {

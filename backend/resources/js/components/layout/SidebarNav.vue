@@ -38,6 +38,7 @@ const navItems = [
     { label: 'Dashboard', to: '/admin', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 13h8V3H3zm10 8h8V3h-8zm-10 0h8v-6H3z"/></svg>' },
     { label: 'Analytics', to: '/admin/analytics', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 19h16v2H4zm2-2V9h3v8zm5 0V5h3v12zm5 0v-6h3v6z"/></svg>' },
     { label: 'Reports', to: '/admin/reports', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M5 5v14l7-3l7 3V5H5z"/></svg>' },
+    { label: 'Report Verification', to: '/admin/report-verification', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2l7 4v6c0 5-3.1 9.4-7 10c-3.9-.6-7-5-7-10V6zm0 2.3L7 6.1v5.9c0 4 2.4 7.6 5 8c2.6-.4 5-4 5-8V6.1zM11 8h2v5h-2zm0 7h2v2h-2z"/></svg>' },
     { label: 'Users', to: '/admin/users', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 1 0-5-5a5 5 0 0 0 5 5m-7 8v-1a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v1Z"/></svg>' },
     { label: 'Roles', to: '/admin/roles', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="m17 3l-1.8 3H8.8L7 3H2l5 9l-5 9h5l1.8-3h6.4L17 21h5l-5-9l5-9z"/></svg>' },
     { label: 'Categories', to: '/admin/categories', icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="m12 1l3 7l7 1l-5 5l1 7l-6-3l-6 3l1-7l-5-5l7-1z"/></svg>' },

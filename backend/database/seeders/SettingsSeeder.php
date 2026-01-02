@@ -88,6 +88,41 @@ class SettingsSeeder extends Seeder
                 'group' => 'reports',
                 'description' => 'Maximum age in days before reports are archived',
             ],
+            [
+                'key' => 'report_verification_enabled',
+                'value' => '0',
+                'type' => 'boolean',
+                'group' => 'reports',
+                'description' => 'Enable or disable automated report verification',
+            ],
+            [
+                'key' => 'report_verification_levels',
+                'value' => json_encode(array_keys(config('verification.levels', []))),
+                'type' => 'json',
+                'group' => 'reports',
+                'description' => 'Enabled auto-verification levels',
+            ],
+            [
+                'key' => 'report_verification_tiers',
+                'value' => json_encode(array_keys(config('verification.tiers', []))),
+                'type' => 'json',
+                'group' => 'reports',
+                'description' => 'Enabled auto-verification tiers',
+            ],
+            [
+                'key' => 'report_verification_default_tier',
+                'value' => config('verification.default_tier', 'basic'),
+                'type' => 'string',
+                'group' => 'reports',
+                'description' => 'Default auto-verification tier for users',
+            ],
+            [
+                'key' => 'report_verification_services',
+                'value' => json_encode([]),
+                'type' => 'json',
+                'group' => 'reports',
+                'description' => 'External service configuration for verification levels',
+            ],
 
             // System Settings
             [

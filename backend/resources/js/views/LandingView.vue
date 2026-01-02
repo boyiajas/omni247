@@ -5,9 +5,12 @@
     <TopStoriesBar />
     <FeaturedSection />
     <TrendingSection />
+    <HowItWorksSection />
     <CategoryBar :categories="categories" @category-change="handleCategoryChange" />
     <NewsGrid :reports="reports" :loading="loading" />
     <FeaturesSection />
+    <ImpactSection />
+    <AppShowcaseSection />
     <AboutSection />
     <CTABanner :stats="stats" />
     <ContactSection />
@@ -22,9 +25,12 @@ import HeroSection from '../components/HeroSection.vue';
 import TopStoriesBar from '../components/TopStoriesBar.vue';
 import FeaturedSection from '../components/FeaturedSection.vue';
 import TrendingSection from '../components/TrendingSection.vue';
+import HowItWorksSection from '../components/HowItWorksSection.vue';
 import CategoryBar from '../components/CategoryBar.vue';
 import NewsGrid from '../components/NewsGrid.vue';
 import FeaturesSection from '../components/FeaturesSection.vue';
+import ImpactSection from '../components/ImpactSection.vue';
+import AppShowcaseSection from '../components/AppShowcaseSection.vue';
 import CTABanner from '../components/CTABanner.vue';
 import AboutSection from '../components/AboutSection.vue';
 import ContactSection from '../components/ContactSection.vue';

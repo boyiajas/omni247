@@ -9,10 +9,12 @@ import { typography, spacing } from '../../theme';
 import { formatDate } from '../../utils/formatters';
 import { useLanguage } from '../../contexts/LanguageContext';
 import useThemedStyles from '../../theme/useThemedStyles';
+import { useLocation } from '../../hooks/useLocation';
 
 const ReportPreviewScreen = ({ navigation, route }) => {
   const { category, media, title, description, privacy, location } = route.params || {};
   const { t } = useLanguage();
+  const locationContext = useLocation();
   const styles = useThemedStyles((palette) => ({
     container: { flex: 1, backgroundColor: palette.background },
     content: { flex: 1, padding: spacing.xl },
@@ -40,11 +42,31 @@ const ReportPreviewScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  const resolveSubmitterLocation = async () => {
+    if (!locationContext?.requestLocationPermission || !locationContext?.getCurrentLocation) {
+      return null;
+    }
+
+    try {
+      const granted = await locationContext.requestLocationPermission();
+      if (!granted) {
+        return null;
+      }
+      const current = await locationContext.getCurrentLocation();
+      return current || null;
+    } catch (error) {
+      return null;
+    }
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     setUploadProgress(0);
 
     try {
+      const submitterLocation =
+        locationContext?.location || await resolveSubmitterLocation();
+
       const payload = {
         category_id: category?.backendId ?? category?.id,
         title: title || t('newsfeed.untitled'),
@@ -53,6 +75,12 @@ const ReportPreviewScreen = ({ navigation, route }) => {
         longitude: location?.longitude ?? 0,
         address: location?.address ?? null,
         privacy: privacy || 'public',
+        submitter_latitude: submitterLocation?.latitude ?? null,
+        submitter_longitude: submitterLocation?.longitude ?? null,
+        submitter_accuracy: submitterLocation?.accuracy ?? null,
+        submitter_location_recorded_at: submitterLocation?.timestamp
+          ? new Date(submitterLocation.timestamp).toISOString()
+          : null,
       };
 
       // 1) Create report

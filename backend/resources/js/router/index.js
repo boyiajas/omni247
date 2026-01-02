@@ -18,6 +18,7 @@ import AuditTrailView from '@/views/AuditTrailView.vue';
 import MapView from '@/views/MapView.vue';
 import SettingsView from '@/views/SettingsView.vue';
 import SupportTicketsView from '@/views/SupportTicketsView.vue';
+import ReportVerificationView from '@/views/ReportVerificationView.vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -114,6 +115,11 @@ const router = createRouter({
                     path: 'support-tickets',
                     name: 'support-tickets',
                     component: SupportTicketsView,
+                },
+                {
+                    path: 'report-verification',
+                    name: 'report-verification',
+                    component: ReportVerificationView,
                 },
             ],
         },

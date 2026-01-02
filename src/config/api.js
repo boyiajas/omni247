@@ -3,7 +3,7 @@
 import baseConfig from './config';
 
 // ✅ Use the API_URL directly from config.js (already includes /api)
-const API_URL = baseConfig?.API_URL || 'http://10.0.2.2:8000/api';
+const API_URL = baseConfig?.API_URL || 'https://omni-247.com/api';
 
 export default {
   ...baseConfig,

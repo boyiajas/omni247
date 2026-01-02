@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import config from '../config/config';
 
 class WebSocketService {
   constructor() {
@@ -21,18 +22,22 @@ class WebSocketService {
       // Initialize Pusher
       window.Pusher = Pusher;
 
+      const wsHost = config.REVERB_HOST || 'omni-247.com';
+      const wsPort = Number(config.REVERB_PORT || 443);
+      const forceTLS = (config.WS_URL || '').startsWith('wss') || config.ENV === 'production';
+
       this.echo = new Echo({
         broadcaster: 'pusher',
-        key: 'your-pusher-key',
-        cluster: 'your-cluster',
-        wsHost: 'your-websocket-host',
-        wsPort: 6001,
-        wssPort: 6001,
-        forceTLS: false,
-        encrypted: true,
+        key: config.REVERB_APP_KEY || 'local',
+        cluster: 'mt1',
+        wsHost,
+        wsPort,
+        wssPort: wsPort,
+        forceTLS,
+        encrypted: forceTLS,
         disableStats: true,
         enabledTransports: ['ws', 'wss'],
-        authEndpoint: 'https://your-api.com/broadcasting/auth',
+        authEndpoint: `${config.API_URL}/broadcasting/auth`,
         auth: {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\ReportVerificationController as AdminReportVerificationController;
 use App\Http\Controllers\Admin\AchievementController as AdminAchievementController;
 use App\Http\Controllers\Admin\SupportTicketController as AdminSupportTicketController;
 use App\Http\Controllers\Api\AuthController;
@@ -170,5 +171,8 @@ Route::prefix('admin')->group(function () {
         Route::get('/settings/{key}', [AdminSettingsController::class, 'show']);
         Route::put('/settings/{key}', [AdminSettingsController::class, 'update']);
         Route::delete('/settings/{key}', [AdminSettingsController::class, 'destroy']);
+
+        Route::get('/report-verification', [AdminReportVerificationController::class, 'show']);
+        Route::put('/report-verification', [AdminReportVerificationController::class, 'update']);
     });
 });

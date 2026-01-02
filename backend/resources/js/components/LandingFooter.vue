@@ -10,7 +10,8 @@
         <div class="footer-column">
           <h4 class="footer-heading">Quick Links</h4>
           <a href="#news" class="footer-link">Latest Reports</a>
-          <a href="#features" class="footer-link">How It Works</a>
+          <a href="#how-it-works" class="footer-link">How It Works</a>
+          <a href="#impact" class="footer-link">Impact</a>
           <a href="#about" class="footer-link">About Omni247</a>
           <a href="#contact" class="footer-link">Contact</a>
         </div>

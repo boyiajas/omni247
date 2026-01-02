@@ -45,6 +45,37 @@
         </div>
 
         <div class="panel">
+            <h3>Auto-verification</h3>
+            <div class="form">
+                <label class="toggle">
+                    <input type="checkbox" v-model="form.auto_verify_enabled" />
+                    <span>Enable auto-verification for this user</span>
+                </label>
+
+                <label>
+                    Verification tier
+                    <select v-model="form.auto_verify_tier">
+                        <option v-for="(tier, key) in verificationConfig.tiers" :key="key" :value="key">
+                            {{ tier.label }}
+                        </option>
+                    </select>
+                </label>
+
+                <div class="level-grid">
+                    <label v-for="(level, key) in verificationConfig.levels" :key="key" class="level-chip">
+                        <input type="checkbox" :value="key" v-model="form.auto_verify_levels" />
+                        <span>{{ level.label }}</span>
+                        <small>{{ level.max_score }} pts</small>
+                    </label>
+                </div>
+
+                <button type="button" class="primary-btn" @click="saveVerification" :disabled="savingVerification">
+                    {{ savingVerification ? 'Saving...' : 'Save verification settings' }}
+                </button>
+            </div>
+        </div>
+
+        <div class="panel">
             <h3>Stats</h3>
             <div class="stats">
                 <div>
@@ -131,12 +162,20 @@ const router = useRouter();
 const user = ref(null);
 const roles = ref([]);
 const saving = ref(false);
+const savingVerification = ref(false);
+const verificationConfig = reactive({
+    levels: {},
+    tiers: {},
+});
 const form = reactive({
     name: '',
     email: '',
     phone: '',
     status: 'active',
     role_id: null,
+    auto_verify_enabled: false,
+    auto_verify_tier: 'basic',
+    auto_verify_levels: [],
 });
 
 const fetchUser = async () => {
@@ -147,6 +186,15 @@ const fetchUser = async () => {
     form.phone = data.phone;
     form.status = data.status;
     form.role_id = data.role_id;
+    form.auto_verify_enabled = !!data.auto_verify_enabled;
+    form.auto_verify_tier = data.auto_verify_tier || 'basic';
+    form.auto_verify_levels = Array.isArray(data.auto_verify_levels) ? data.auto_verify_levels : [];
+};
+
+const fetchVerificationConfig = async () => {
+    const { data } = await api.get('/admin/report-verification');
+    verificationConfig.levels = data.levels || {};
+    verificationConfig.tiers = data.tiers || {};
 };
 
 const fetchRoles = async () => {
@@ -176,6 +224,17 @@ const updateRole = async () => {
     fetchUser();
 };
 
+const saveVerification = async () => {
+    savingVerification.value = true;
+    await api.put(`/admin/users/${route.params.id}`, {
+        auto_verify_enabled: form.auto_verify_enabled,
+        auto_verify_tier: form.auto_verify_tier,
+        auto_verify_levels: form.auto_verify_levels,
+    });
+    savingVerification.value = false;
+    fetchUser();
+};
+
 const goBack = () => {
     router.push({ name: 'users' });
 };
@@ -198,6 +257,7 @@ const formatDate = (dateString) => {
 
 onMounted(() => {
     fetchRoles();
+    fetchVerificationConfig();
     fetchUser();
 });
 </script>
@@ -214,6 +274,35 @@ onMounted(() => {
     border-radius: 24px;
     padding: 20px;
     box-shadow: 0 20px 40px rgba(15, 23, 42, 0.05);
+}
+
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.level-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px 0 18px;
+}
+
+.level-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 12px;
+}
+
+.level-chip small {
+    color: #64748b;
 }
 
 .link-btn {
@@ -286,6 +375,17 @@ select {
 }
 
 button[type='submit'] {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #22c55e, #0ea5e9);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.primary-btn {
     border: none;
     border-radius: 10px;
     padding: 10px 14px;

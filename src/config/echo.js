@@ -10,7 +10,7 @@ window.Pusher = Pusher;
 const echo = new Echo({
     broadcaster: 'reverb',
     key: config.REVERB_APP_KEY || 'YOUR_REVERB_APP_KEY',
-    wsHost: config.REVERB_HOST || 'localhost',
+    wsHost: config.REVERB_HOST || 'omni-247.com',
     wsPort: config.REVERB_PORT || 8080,
     wssPort: config.REVERB_PORT || 8080,
     forceTLS: config.ENV === 'production',

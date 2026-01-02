@@ -10,13 +10,14 @@
       
       <nav class="nav-links">
         <a href="#news" class="nav-link">Reports</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
         <a href="#features" class="nav-link">Features</a>
-        <a href="#about" class="nav-link">About</a>
+        <a href="#impact" class="nav-link">Impact</a>
         <a href="#contact" class="nav-link">Contact</a>
       </nav>
       
       <div class="portal-buttons">
-        <router-link to="/client-login" class="btn btn-outline">Client Portal</router-link>
+        <a href="/client/login" class="btn btn-outline">Client Portal</a>
         <router-link to="/admin-login" class="btn btn-primary">Admin Portal</router-link>
       </div>
     </div>

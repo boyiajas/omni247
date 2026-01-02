@@ -26,6 +26,18 @@ class ReportController extends Controller
             $query->where('priority', $priority);
         }
 
+        if ($verificationStatus = $request->query('verification_status')) {
+            if ($verificationStatus === 'none') {
+                $query->whereNull('verification_status');
+            } else {
+                $query->where('verification_status', $verificationStatus);
+            }
+        }
+
+        if ($verificationTier = $request->query('verification_tier')) {
+            $query->where('verification_tier', $verificationTier);
+        }
+
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
@@ -41,7 +53,7 @@ class ReportController extends Controller
         $report->load([
             'user:id,name,email,avatar_url',
             'category:id,name,color',
-            'media:id,report_id,type,url,order',
+            'media:id,report_id,type,url,order,thumbnail_url',
             'comments.user:id,name,avatar_url',
         ]);
 

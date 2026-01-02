@@ -24,6 +24,7 @@ import EditReportScreen from '../screens/report/EditReportScreen';
 
 // Detail Screens
 import ReportDetailScreen from '../screens/details/ReportDetailScreen';
+import ReportRatingScreen from '../screens/details/ReportRatingScreen';
 import UserProfileScreen from '../screens/details/UserProfileScreen';
 import AgencyDetailScreen from '../screens/details/AgencyDetailScreen';
 
@@ -71,6 +72,7 @@ const MainNavigator = () => {
             <Stack.Screen name="ReportFlow" component={ReportStack} />
             <Stack.Screen name="EditReport" component={EditReportScreen} />
             <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+            <Stack.Screen name="ReportRatings" component={ReportRatingScreen} />
             <Stack.Screen name="UserProfile" component={UserProfileScreen} />
             <Stack.Screen name="AgencyDetail" component={AgencyDetailScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />

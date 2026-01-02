@@ -49,6 +49,20 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const getAuthErrorMessage = (error) => {
+        const response = error?.response;
+        const data = response?.data;
+
+        if (data?.errors) {
+            const firstError = Object.values(data.errors).flat()[0];
+            if (firstError) {
+                return firstError;
+            }
+        }
+
+        return data?.message || error?.message || 'Unable to complete request.';
+    };
+
     const login = async (emailOrUser, passwordOrToken) => {
         try {
             let newToken, newUser;
@@ -78,8 +92,7 @@ export const AuthProvider = ({ children }) => {
 
             return { success: true };
         } catch (error) {
-            console.error('Login error:', error);
-            return { success: false, error: error.message };
+            return { success: false, error: getAuthErrorMessage(error) };
         }
     };
 
@@ -101,7 +114,7 @@ export const AuthProvider = ({ children }) => {
 
             return { success: true };
         } catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getAuthErrorMessage(error) };
         }
     };
 
@@ -132,7 +145,7 @@ export const AuthProvider = ({ children }) => {
 
             return { success: true };
         } catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: getAuthErrorMessage(error) };
         }
     };
 

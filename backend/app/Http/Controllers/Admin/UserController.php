@@ -88,6 +88,10 @@ class UserController extends Controller
             'phone' => 'nullable|string',
             'reputation_score' => 'nullable|integer',
             'total_points' => 'nullable|integer',
+            'auto_verify_enabled' => 'nullable|boolean',
+            'auto_verify_tier' => 'nullable|string',
+            'auto_verify_levels' => 'nullable|array',
+            'auto_verify_levels.*' => 'string',
         ]);
 
         $user->update($validated);

@@ -1,0 +1,23 @@
+/* Client Portal Styles */
+@import './app.css';
+/* Use app.css as base */
+
+/* Custom client portal overrides if needed */
+.card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.05);
+}
+
+.card-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.page-header {
+    margin-bottom: 28px;
+}

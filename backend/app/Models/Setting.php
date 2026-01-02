@@ -49,7 +49,7 @@ class Setting extends Model
         return match ($type) {
             'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
             'number' => is_numeric($value) ? (float) $value : $value,
-            'json' => json_decode($value, true),
+            'json' => is_array($value) ? $value : json_decode($value, true),
             default => $value,
         };
     }

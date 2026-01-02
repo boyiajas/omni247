@@ -38,6 +38,9 @@ class User extends Authenticatable
         'last_known_lng',
         'language',
         'theme',
+        'auto_verify_enabled',
+        'auto_verify_tier',
+        'auto_verify_levels',
     ];
 
     protected $hidden = [
@@ -56,6 +59,8 @@ class User extends Authenticatable
         'last_known_lng' => 'float',
         'notification_settings' => 'array',
         'privacy_settings' => 'array',
+        'auto_verify_enabled' => 'boolean',
+        'auto_verify_levels' => 'array',
     ];
 
     protected $appends = [

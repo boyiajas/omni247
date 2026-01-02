@@ -20,10 +20,12 @@ import { typography, spacing } from '../../theme';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import useThemedStyles from '../../theme/useThemedStyles';
+import { useLocation } from '../../hooks/useLocation';
 
 const EditReportScreen = ({ navigation, route }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const locationContext = useLocation();
     const colors = theme.colors;
     const styles = useThemedStyles((palette) => ({
         container: {
@@ -167,12 +169,30 @@ const EditReportScreen = ({ navigation, route }) => {
 
         try {
             setLoading(true);
+            let submitterLocation = null;
+            try {
+                if (locationContext?.requestLocationPermission && locationContext?.getCurrentLocation) {
+                    const granted = await locationContext.requestLocationPermission();
+                    if (granted) {
+                        submitterLocation = await locationContext.getCurrentLocation();
+                    }
+                }
+            } catch (error) {
+                submitterLocation = null;
+            }
+
             const response = await reportsAPI.updateReport(reportId, {
                 title: title.trim(),
                 description: description.trim(),
                 latitude: location?.latitude ?? null,
                 longitude: location?.longitude ?? null,
                 address: location?.address ?? null,
+                submitter_latitude: submitterLocation?.latitude ?? null,
+                submitter_longitude: submitterLocation?.longitude ?? null,
+                submitter_accuracy: submitterLocation?.accuracy ?? null,
+                submitter_location_recorded_at: submitterLocation?.timestamp
+                    ? new Date(submitterLocation.timestamp).toISOString()
+                    : null,
             });
             const updatedReport = response?.data || null;
             if (route.params?.onUpdated) {

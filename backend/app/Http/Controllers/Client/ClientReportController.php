@@ -145,12 +145,20 @@ class ClientReportController extends Controller
             return null;
         }
 
-        if (str_contains($url, '10.0.2.2:8000')) {
-            $path = parse_url($url, PHP_URL_PATH);
-            return url($path);
-        }
-
         if (str_starts_with($url, 'http')) {
+            $host = parse_url($url, PHP_URL_HOST);
+            $path = parse_url($url, PHP_URL_PATH);
+            $localHosts = ['localhost', '127.0.0.1', '10.0.2.2'];
+            $appHost = parse_url(config('app.url'), PHP_URL_HOST);
+
+            if ($host && in_array($host, $localHosts, true)) {
+                return url($path ?: '/');
+            }
+
+            if ($appHost && $host && $host !== $appHost && str_starts_with($path ?? '', '/storage/')) {
+                return url($path ?: '/');
+            }
+
             return $url;
         }
 

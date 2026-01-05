@@ -26,10 +26,8 @@ class MediaController extends Controller
         $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
         $path = "{$type}s/" . date('Y/m/d');
         
-        // Store file
+        // Store file (relative path)
         $url = Storage::disk('public')->putFileAs($path, $file, $filename);
-        // Use url() helper to get full absolute URL
-        $fullUrl = url('/storage/' . $url);
 
         // Get file metadata
         $metadata = [
@@ -41,7 +39,7 @@ class MediaController extends Controller
         $thumbnailUrl = null;
         if (in_array($type, ['image', 'video'])) {
             // Thumbnail generation logic would go here
-            $thumbnailUrl = $fullUrl; // Placeholder
+            $thumbnailUrl = $url; // Placeholder (relative path)
         }
 
         // Get dimensions for images
@@ -54,7 +52,7 @@ class MediaController extends Controller
         $media = Media::create([
             'report_id' => $validated['report_id'],
             'type' => $type,
-            'url' => $fullUrl,
+            'url' => $url,
             'thumbnail_url' => $thumbnailUrl,
             'filename' => $filename,
             'mime_type' => $file->getMimeType(),

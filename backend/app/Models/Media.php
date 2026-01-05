@@ -38,15 +38,22 @@ class Media extends Model
             return null;
         }
 
-        // If URL contains Android emulator address (10.0.2.2), convert to current domain
-        if (str_contains($this->url, '10.0.2.2:8000')) {
-            // Extract the path after the domain
-            $path = parse_url($this->url, PHP_URL_PATH);
-            return url($path);
-        }
-
-        // If URL is already a full URL (starts with http), return as is
+        // If URL is already a full URL (starts with http), normalize local/dev hosts.
         if (str_starts_with($this->url, 'http')) {
+            $host = parse_url($this->url, PHP_URL_HOST);
+            $path = parse_url($this->url, PHP_URL_PATH);
+
+            $localHosts = ['localhost', '127.0.0.1', '10.0.2.2'];
+            $appHost = parse_url(config('app.url'), PHP_URL_HOST);
+
+            if ($host && in_array($host, $localHosts, true)) {
+                return url($path ?: '/');
+            }
+
+            if ($appHost && $host && $host !== $appHost && str_starts_with($path ?? '', '/storage/')) {
+                return url($path ?: '/');
+            }
+
             return $this->url;
         }
 

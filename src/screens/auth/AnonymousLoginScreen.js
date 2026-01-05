@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../components/common/Button';
 import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -62,34 +63,36 @@ const AnonymousLoginScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.content}>
-                <Text style={styles.title}>{t('auth.anonymousTitle')}</Text>
-                <Text style={styles.message}>
-                    {t('auth.anonymousMessage')}
-                </Text>
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.container}>
+                <View style={styles.content}>
+                    <Text style={styles.title}>{t('auth.anonymousTitle')}</Text>
+                    <Text style={styles.message}>
+                        {t('auth.anonymousMessage')}
+                    </Text>
 
-                <View style={styles.features}>
-                    <Text style={styles.featureItem}>{t('auth.anonymousFeature1')}</Text>
-                    <Text style={styles.featureItem}>{t('auth.anonymousFeature2')}</Text>
-                    <Text style={styles.featureItem}>{t('auth.anonymousFeature3')}</Text>
+                    <View style={styles.features}>
+                        <Text style={styles.featureItem}>{t('auth.anonymousFeature1')}</Text>
+                        <Text style={styles.featureItem}>{t('auth.anonymousFeature2')}</Text>
+                        <Text style={styles.featureItem}>{t('auth.anonymousFeature3')}</Text>
+                    </View>
+
+                    <Button
+                        title={t('auth.continueAnonymously')}
+                        onPress={handleContinue}
+                        loading={loading}
+                        style={styles.button}
+                    />
+
+                    <Button
+                        title={t('auth.createAccountInstead')}
+                        variant="outline"
+                        onPress={() => navigation.navigate('Register')}
+                        style={styles.button}
+                    />
                 </View>
-
-                <Button
-                    title={t('auth.continueAnonymously')}
-                    onPress={handleContinue}
-                    loading={loading}
-                    style={styles.button}
-                />
-
-                <Button
-                    title={t('auth.createAccountInstead')}
-                    variant="outline"
-                    onPress={() => navigation.navigate('Register')}
-                    style={styles.button}
-                />
             </View>
-        </View>
+        </SafeAreaView>
     );
 };
 

@@ -12,6 +12,7 @@ import {
     ActivityIndicator,
     Share,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { reportsAPI } from '../../services/api/reports';
 import { commentsAPI } from '../../services/api/comments';
 import { API_BASE_URL } from '../../config/api';
@@ -28,6 +29,38 @@ import useThemedStyles from '../../theme/useThemedStyles';
 
 // Placeholder image for reports without media
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&q=80';
+
+const isCoordinateLocation = (value) => {
+    if (!value) return false;
+    const trimmed = value.toString().trim();
+    return /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(trimmed);
+};
+
+const isPlaceholderLocation = (value, t) => {
+    if (!value) return true;
+    const normalized = value.toString().trim().toLowerCase();
+    const unknownLabel = t('newsfeed.unknownLocation').toLowerCase();
+    return (
+        !normalized
+        || normalized === unknownLabel
+        || normalized === 'unknown location'
+        || normalized === 'getting location...'
+        || normalized === 'getting location…'
+        || isCoordinateLocation(normalized)
+    );
+};
+
+const getDisplayLocation = (report, t) => {
+    const rawLocation = report?.address
+        || report?.location_address
+        || [report?.city, report?.country].filter(Boolean).join(', ');
+
+    if (isPlaceholderLocation(rawLocation, t)) {
+        return t('newsfeed.unknownLocation');
+    }
+
+    return rawLocation.toString().trim();
+};
 
 const ReportDetailScreen = ({ route, navigation }) => {
     const { user } = useAuth();
@@ -468,7 +501,7 @@ const ReportDetailScreen = ({ route, navigation }) => {
     const handleShare = async () => {
         try {
             const title = report?.title || t('reportDetail.titleFallback');
-            const location = report?.address || report?.location_address || report?.city || t('newsfeed.unknownLocation');
+            const location = getDisplayLocation(report, t);
             const description = report?.description ? `\n\n${report.description}` : '';
             const message = `${title}\n${location}${description}`;
 
@@ -619,11 +652,12 @@ const ReportDetailScreen = ({ route, navigation }) => {
     }
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-            <ScrollView style={styles.container}>
+        <SafeAreaView style={{ flex: 1 }}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
+                <ScrollView style={styles.container}>
                 {/* Header Image */}
                 <View style={styles.imageContainer}>
                     <Image source={{ uri: mediaUrl }} style={styles.heroImage} />
@@ -768,14 +802,14 @@ const ReportDetailScreen = ({ route, navigation }) => {
                     </View>
 
                     {/* Location */}
-                    {(report.address || report.latitude) && (
+                    {(report.address || report.location_address || report.city || report.country || report.latitude) && (
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>{t('reportDetail.location')}</Text>
                             <View style={styles.locationCard}>
                                 <Icon name="map-marker" size={24} color={colors.primary} />
                                 <View style={styles.locationInfo}>
                                     <Text style={styles.locationText}>
-                                        {report.address || `${report.latitude}, ${report.longitude}`}
+                                        {getDisplayLocation(report, t)}
                                     </Text>
                                     {report.city && (
                                         <Text style={styles.locationSubtext}>{report.city}, {report.country}</Text>
@@ -884,8 +918,9 @@ const ReportDetailScreen = ({ route, navigation }) => {
                         )}
                     </View>
                 </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 

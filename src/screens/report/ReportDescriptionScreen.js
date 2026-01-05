@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useLocation } from '../../hooks/useLocation';
@@ -229,10 +230,11 @@ const ReportDescriptionScreen = ({ navigation, route }) => {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}>
-            <View style={styles.content}>
+        <SafeAreaView style={{ flex: 1 }}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.container}>
+                <View style={styles.content}>
                 <Text style={styles.title}>{t('reportDescription.title')}</Text>
 
                 <TouchableOpacity style={styles.locationRow} onPress={handleLocationAction}>
@@ -323,7 +325,8 @@ const ReportDescriptionScreen = ({ navigation, route }) => {
                     </KeyboardAvoidingView>
                 </View>
             </Modal>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 export default ReportDescriptionScreen;

@@ -1,12 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-    View,
-    Text,
-    SafeAreaView,
-    SectionList,
-    ActivityIndicator,
-    RefreshControl,
-} from 'react-native';
+import { View, Text, SectionList, ActivityIndicator, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { rewardsAPI } from '../../services/api/rewards';
 import { useLanguage } from '../../contexts/LanguageContext';

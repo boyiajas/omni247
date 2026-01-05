@@ -8,6 +8,7 @@ import {
     ActivityIndicator,
     Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Card from '../../components/common/Card';
 import { typography, spacing } from '../../theme';
@@ -107,8 +108,9 @@ const LanguageSettings = () => {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.title}>{t('language.title')}</Text>
+        <SafeAreaView style={{ flex: 1 }}>
+            <ScrollView style={styles.container}>
+                <Text style={styles.title}>{t('language.title')}</Text>
 
             <Card>
                 {loading ? (
@@ -142,7 +144,8 @@ const LanguageSettings = () => {
                     ))
                 )}
             </Card>
-        </ScrollView>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 

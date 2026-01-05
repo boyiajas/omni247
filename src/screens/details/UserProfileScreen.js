@@ -1,13 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-    ActivityIndicator,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { spacing, typography } from '../../theme';
 import { useAuth } from '../../contexts/AuthContext';

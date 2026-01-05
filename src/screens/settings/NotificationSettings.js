@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, Switch, ScrollView, StyleSheet, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/common/Card';
 import { typography, spacing } from '../../theme';
 import { authAPI } from '../../services/api/auth';
@@ -191,8 +192,9 @@ const NotificationSettings = () => {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.title}>{t('notificationSettings.title')}</Text>
+        <SafeAreaView style={{ flex: 1 }}>
+            <ScrollView style={styles.container}>
+                <Text style={styles.title}>{t('notificationSettings.title')}</Text>
 
             <Card>
                 <View style={styles.setting}>
@@ -344,7 +346,8 @@ const NotificationSettings = () => {
                     </View>
                 </View>
             </Card>
-        </ScrollView>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 

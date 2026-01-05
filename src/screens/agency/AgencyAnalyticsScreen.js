@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/common/Card';
 import { typography, spacing } from '../../theme';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -22,12 +23,14 @@ const AgencyAnalyticsScreen = () => {
         },
     }));
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.title}>{t('agency.analyticsTitle')}</Text>
-            <Card>
-                <Text>{t('agency.analyticsComingSoon')}</Text>
-            </Card>
-        </ScrollView>
+        <SafeAreaView style={{ flex: 1 }}>
+            <ScrollView style={styles.container}>
+                <Text style={styles.title}>{t('agency.analyticsTitle')}</Text>
+                <Card>
+                    <Text>{t('agency.analyticsComingSoon')}</Text>
+                </Card>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 export default AgencyAnalyticsScreen;

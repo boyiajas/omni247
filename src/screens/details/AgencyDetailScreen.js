@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/common/Card';
 import { colors, typography, spacing } from '../../theme';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -9,12 +10,14 @@ const AgencyDetailScreen = ({ route }) => {
     const { t } = useLanguage();
 
     return (
-        <ScrollView style={styles.container}>
-            <Card>
-                <Text style={styles.title}>{t('agency.detailTitle')}</Text>
-                <Text style={styles.subtitle}>{t('agency.detailId', { id: agencyId })}</Text>
-            </Card>
-        </ScrollView>
+        <SafeAreaView style={{ flex: 1 }}>
+            <ScrollView style={styles.container}>
+                <Card>
+                    <Text style={styles.title}>{t('agency.detailTitle')}</Text>
+                    <Text style={styles.subtitle}>{t('agency.detailId', { id: agencyId })}</Text>
+                </Card>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 

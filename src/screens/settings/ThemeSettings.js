@@ -6,6 +6,7 @@ import {
     StyleSheet,
     TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Card from '../../components/common/Card';
 import { typography, spacing } from '../../theme';
@@ -91,9 +92,10 @@ const ThemeSettings = () => {
     }), [colors]);
 
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.title}>{t('settings.theme')}</Text>
-            <Text style={styles.subtitle}>{t('settings.themeSubtitle')}</Text>
+        <SafeAreaView style={{ flex: 1 }}>
+            <ScrollView style={styles.container}>
+                <Text style={styles.title}>{t('settings.theme')}</Text>
+                <Text style={styles.subtitle}>{t('settings.themeSubtitle')}</Text>
 
             <Card>
                 {themeOptions.map((option, index) => {
@@ -124,7 +126,8 @@ const ThemeSettings = () => {
                     );
                 })}
             </Card>
-        </ScrollView>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 

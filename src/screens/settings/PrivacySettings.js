@@ -10,6 +10,7 @@ import {
     Modal,
     FlatList,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/common/Card';
 import { typography, spacing } from '../../theme';
 import { privacyAPI } from '../../services/api/privacy';
@@ -358,21 +359,24 @@ const PrivacySettings = ({ navigation }) => {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.loadingText}>{t('privacy.loading')}</Text>
-            </View>
+            <SafeAreaView style={{ flex: 1 }}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={styles.loadingText}>{t('privacy.loading')}</Text>
+                </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Icon name="arrow-left" size={24} color={colors.textPrimary} />
-                </TouchableOpacity>
-                <Text style={styles.title}>{t('privacy.title')}</Text>
-            </View>
+        <SafeAreaView style={{ flex: 1 }}>
+            <ScrollView style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Icon name="arrow-left" size={24} color={colors.textPrimary} />
+                    </TouchableOpacity>
+                    <Text style={styles.title}>{t('privacy.title')}</Text>
+                </View>
 
             {/* Profile Visibility Section */}
             <Card style={styles.card}>
@@ -552,7 +556,8 @@ const PrivacySettings = ({ navigation }) => {
             </TouchableOpacity>
 
             <View style={styles.bottomSpacer} />
-        </ScrollView>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 

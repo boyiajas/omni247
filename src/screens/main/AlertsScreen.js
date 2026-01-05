@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  SafeAreaView,
-  TouchableOpacity,
-  RefreshControl,
-  SectionList,
-} from 'react-native';
+import { View, Text, TouchableOpacity, RefreshControl, SectionList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { alertsAPI } from '../../services/api/alerts';

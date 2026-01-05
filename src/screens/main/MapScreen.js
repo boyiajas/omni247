@@ -1,17 +1,6 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  Alert,
-  Modal,
-  Animated,
-  TouchableWithoutFeedback,
-} from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Alert, Modal, Animated, TouchableWithoutFeedback } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { colors as baseColors, typography, categoryColors } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -341,7 +330,7 @@ class MapScreenContent extends React.Component {
 
     this.setState({
       userLocation: nextLocation,
-      currentAddress: `${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}`,
+      currentAddress: '',
     });
     this.resolveAddress(nextLocation);
 
@@ -498,7 +487,7 @@ class MapScreenContent extends React.Component {
 
     if (this.state.hasMapError) {
       return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
           <View style={styles.errorCard}>
             <Icon name="map-marker-off" size={28} color={colors.primary} />
             <Text style={styles.errorTitle}>{t('map.mapUnavailableTitle')}</Text>
@@ -517,7 +506,7 @@ class MapScreenContent extends React.Component {
     }
 
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{t('map.headerTitle')}</Text>
           <View style={styles.notificationWrap}>
@@ -1017,7 +1006,8 @@ const getStyles = (colors) => StyleSheet.create({
     borderBottomColor: colors.neutralLight,
   },
   categoriesContainer: {
-    paddingVertical: 12,
+    paddingTop: 12,
+    paddingBottom: 0,
     backgroundColor: colors.white,
   },
   categoriesScroll: {

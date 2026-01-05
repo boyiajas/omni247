@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { alertsAPI } from '../services/api/alerts';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -100,6 +101,7 @@ const MainTabs = () => {
     const { t } = useLanguage();
     const { theme } = useTheme();
     const colors = theme.colors;
+    const insets = useSafeAreaInsets();
 
     const refreshAlertsCount = async () => {
         try {
@@ -146,8 +148,8 @@ const MainTabs = () => {
                     backgroundColor: colors.white,
                     borderTopWidth: 1,
                     borderTopColor: colors.border,
-                    paddingBottom: 5,
-                    height: 60,
+                    paddingBottom: Math.max(6, insets.bottom),
+                    height: 60 + insets.bottom,
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,

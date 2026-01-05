@@ -1,14 +1,6 @@
 import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    ScrollView,
-    SafeAreaView,
-    TouchableOpacity,
-    TextInput,
-    Alert,
-    Linking,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { supportTicketsAPI } from '../../services/api/supportTickets';

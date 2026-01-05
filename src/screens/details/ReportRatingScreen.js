@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { reportsAPI } from '../../services/api/reports';
 import { typography, spacing } from '../../theme';
@@ -232,16 +233,17 @@ const ReportRatingScreen = ({ navigation, route }) => {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Icon name="arrow-left" size={24} color={colors.textPrimary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{t('reportDetail.ratingDetailsTitle') || 'Report Reviews'}</Text>
-                <View style={styles.headerSpacer} />
-            </View>
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()}>
+                        <Icon name="arrow-left" size={24} color={colors.textPrimary} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>{t('reportDetail.ratingDetailsTitle') || 'Report Reviews'}</Text>
+                    <View style={styles.headerSpacer} />
+                </View>
 
-            <ScrollView contentContainerStyle={styles.content}>
+                <ScrollView contentContainerStyle={styles.content}>
                 <View style={styles.summaryCard}>
                     <View style={styles.summaryTop}>
                         <View>
@@ -333,8 +335,9 @@ const ReportRatingScreen = ({ navigation, route }) => {
                         ))
                     )}
                 </View>
-            </ScrollView>
-        </View>
+                </ScrollView>
+            </View>
+        </SafeAreaView>
     );
 };
 

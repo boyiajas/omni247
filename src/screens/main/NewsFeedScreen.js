@@ -1,18 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  FlatList,
-  RefreshControl,
-  Dimensions,
-  Alert,
-  TextInput,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, FlatList, RefreshControl, Dimensions, Alert, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { reportsAPI } from '../../services/api/reports';
@@ -83,6 +71,33 @@ const formatTimeAgo = (dateString, t) => {
 const formatRatingValue = (value) => (Number(value) || 0).toFixed(1);
 const API_HOST = API_BASE_URL.replace(/\/api\/?$/, '');
 
+const isCoordinateLocation = (value) => {
+  if (!value) return false;
+  const trimmed = value.toString().trim();
+  return /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(trimmed);
+};
+
+const isPlaceholderLocation = (value, t) => {
+  if (!value) return true;
+  const normalized = value.toString().trim().toLowerCase();
+  const unknownLabel = t('newsfeed.unknownLocation').toLowerCase();
+  return (
+    !normalized
+    || normalized === unknownLabel
+    || normalized === 'unknown location'
+    || normalized === 'getting location...'
+    || normalized === 'getting location…'
+    || isCoordinateLocation(normalized)
+  );
+};
+
+const normalizeLocation = (value, t) => {
+  if (isPlaceholderLocation(value, t)) {
+    return t('newsfeed.unknownLocation');
+  }
+  return value.toString().trim();
+};
+
 // Transform API report to feed format
 const transformApiReport = (report, t) => {
   // Get first media URL if available
@@ -110,13 +125,17 @@ const transformApiReport = (report, t) => {
     }
   }
 
+  const rawLocation = report.address
+    || report.location_address
+    || [report.city, report.country].filter(Boolean).join(', ');
+
   return {
     id: `api-${report.id}`,
     userId: report.user_id, // For ownership checking
     title: report.title || t('newsfeed.untitled'),
     description: report.description || '',
     category: categorySlugToName[report.category_id] || 'other',
-    location: report.address || report.location_address || t('newsfeed.unknownLocation'),
+    location: normalizeLocation(rawLocation, t),
     latitude: report.latitude ? Number(report.latitude) : null,
     longitude: report.longitude ? Number(report.longitude) : null,
     distanceBadge: null,
@@ -213,7 +232,8 @@ export default function NewsFeedScreen({ navigation }) {
       fontWeight: '600',
     },
     categoriesContainer: {
-      paddingVertical: 12,
+      paddingTop: 12,
+      paddingBottom: 0,
       borderBottomWidth: 1,
       borderBottomColor: palette.border,
     },
@@ -322,7 +342,7 @@ export default function NewsFeedScreen({ navigation }) {
       marginLeft: 4,
     },
     feedList: {
-      paddingBottom: 20,
+      paddingBottom: 0,
     },
     feedItem: {
       backgroundColor: palette.white,
@@ -753,8 +773,7 @@ export default function NewsFeedScreen({ navigation }) {
     };
 
     const updatedData = feedData.map(item => {
-      const locationText = (item.location || '').toString().trim().toLowerCase();
-      const hasKnownLocation = locationText && locationText !== 'unknown location';
+      const hasKnownLocation = !isPlaceholderLocation(item.location, t);
       const hasValidCoords =
         Number.isFinite(item.latitude)
         && Number.isFinite(item.longitude)

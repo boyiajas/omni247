@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Card from '../../components/common/Card';
 import { useAuth } from '../../hooks/useAuth';
@@ -86,8 +87,9 @@ const SettingsScreen = ({ navigation }) => {
     }), [colors, t]);
 
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.title}>{t('settings.title')}</Text>
+        <SafeAreaView style={{ flex: 1 }}>
+            <ScrollView style={styles.container}>
+                <Text style={styles.title}>{t('settings.title')}</Text>
 
             <Card>
                 {settingsOptions.map((option, index) => (
@@ -104,12 +106,13 @@ const SettingsScreen = ({ navigation }) => {
                 ))}
             </Card>
 
-            <TouchableOpacity
-                style={styles.logoutButton}
-                onPress={logout}>
-                <Text style={styles.logoutText}>{t('settings.logout')}</Text>
-            </TouchableOpacity>
-        </ScrollView>
+                <TouchableOpacity
+                    style={styles.logoutButton}
+                    onPress={logout}>
+                    <Text style={styles.logoutText}>{t('settings.logout')}</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 

@@ -1,18 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  SafeAreaView,
-  Image,
-  ScrollView,
-  Platform,
-  Alert,
-  PermissionsAndroid,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Platform, Alert, PermissionsAndroid, Modal, TextInput, KeyboardAvoidingView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';

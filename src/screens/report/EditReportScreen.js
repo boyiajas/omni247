@@ -11,6 +11,7 @@ import {
     Modal,
     TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import { reportsAPI } from '../../services/api/reports';
@@ -319,10 +320,11 @@ const EditReportScreen = ({ navigation, route }) => {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}>
-            <ScrollView contentContainerStyle={styles.content}>
+        <SafeAreaView style={{ flex: 1 }}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.container}>
+                <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.title}>{t('reportEdit.title')}</Text>
                 <TouchableOpacity style={styles.locationRow} onPress={handleLocationAction}>
                     <Text style={styles.locationLabel}>{t('reportDescription.locationLabel')}</Text>
@@ -360,7 +362,7 @@ const EditReportScreen = ({ navigation, route }) => {
                         style={styles.actionButton}
                     />
                 </View>
-            </ScrollView>
+                </ScrollView>
 
             <Modal
                 transparent
@@ -402,7 +404,8 @@ const EditReportScreen = ({ navigation, route }) => {
                     </KeyboardAvoidingView>
                 </View>
             </Modal>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 export default EditReportScreen;

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -60,29 +61,32 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
     if (emailSent) {
         return (
-            <View style={styles.container}>
-                <View style={styles.content}>
-                    <Text style={styles.title}>{t('auth.forgotCheckEmailTitle')}</Text>
-                    <Text style={styles.message}>
-                        {t('auth.forgotCheckEmailMessage', { email })}
-                    </Text>
-                    <Button
-                        title={t('auth.backToLogin')}
-                        onPress={() => navigation.navigate('Login')}
-                        style={styles.button}
-                    />
+            <SafeAreaView style={{ flex: 1 }}>
+                <View style={styles.container}>
+                    <View style={styles.content}>
+                        <Text style={styles.title}>{t('auth.forgotCheckEmailTitle')}</Text>
+                        <Text style={styles.message}>
+                            {t('auth.forgotCheckEmailMessage', { email })}
+                        </Text>
+                        <Button
+                            title={t('auth.backToLogin')}
+                            onPress={() => navigation.navigate('Login')}
+                            style={styles.button}
+                        />
+                    </View>
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}>
-            <View style={styles.content}>
-                <Text style={styles.title}>{t('auth.resetPasswordTitle')}</Text>
-                <Text style={styles.subtitle}>{t('auth.resetPasswordSubtitle')}</Text>
+        <SafeAreaView style={{ flex: 1 }}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.container}>
+                <View style={styles.content}>
+                    <Text style={styles.title}>{t('auth.resetPasswordTitle')}</Text>
+                    <Text style={styles.subtitle}>{t('auth.resetPasswordSubtitle')}</Text>
 
                 <Input
                     label={t('auth.emailLabel')}
@@ -101,13 +105,14 @@ const ForgotPasswordScreen = ({ navigation }) => {
                     style={styles.button}
                 />
 
-                <Button
-                    title={t('auth.backToLogin')}
-                    variant="text"
-                    onPress={() => navigation.goBack()}
-                />
-            </View>
-        </KeyboardAvoidingView>
+                    <Button
+                        title={t('auth.backToLogin')}
+                        variant="text"
+                        onPress={() => navigation.goBack()}
+                    />
+                </View>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 

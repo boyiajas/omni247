@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import useThemedStyles from '../theme/useThemedStyles';
@@ -23,17 +24,19 @@ const SplashScreen = () => {
   }));
 
   return (
-    <LinearGradient
-      colors={[colors.primary, colors.primaryDark]}
-      style={styles.container}>
-      <View style={styles.content}>
-        <Image
-          source={require('../assets/images/logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
-    </LinearGradient>
+    <SafeAreaView style={{ flex: 1 }}>
+      <LinearGradient
+        colors={[colors.primary, colors.primaryDark]}
+        style={styles.container}>
+        <View style={styles.content}>
+          <Image
+            source={require('../assets/images/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+      </LinearGradient>
+    </SafeAreaView>
   );
 };
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Image, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import Badge from '../../components/ui/Badge';
@@ -120,9 +121,10 @@ const ReportPreviewScreen = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.content}>
-        <Text style={styles.title}>{t('reportPreview.title')}</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <ScrollView style={styles.content}>
+          <Text style={styles.title}>{t('reportPreview.title')}</Text>
 
         <Card>
           <Badge text={category?.label || category?.name || t('newsfeed.unknownLocation')} variant="info" style={styles.badge} />
@@ -153,12 +155,13 @@ const ReportPreviewScreen = ({ navigation, route }) => {
             ) : null}
           </View>
         </Card>
-      </ScrollView>
+        </ScrollView>
 
-      <View style={styles.footer}>
-        <Button title={t('reportPreview.submit')} onPress={handleSubmit} loading={loading} />
+        <View style={styles.footer}>
+          <Button title={t('reportPreview.submit')} onPress={handleSubmit} loading={loading} />
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 export default ReportPreviewScreen;

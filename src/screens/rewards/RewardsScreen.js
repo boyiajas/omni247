@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -17,16 +9,12 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import useThemedStyles from '../../theme/useThemedStyles';
 
-
-
 const rewards = [
   { id: '1', name: 'Premium Features', points: 500, description: 'Ad-free experience for 30 days', icon: 'crown' },
   { id: '2', name: '$25 Gift Card', points: 1000, description: 'Amazon, Starbucks, or donate to charity', icon: 'gift' },
   { id: '3', name: 'Verified Badge', points: 1500, description: 'Get verified reporter status', icon: 'check-decagram' },
   { id: '4', name: 'API Access', points: 2000, description: 'Access to advanced API features', icon: 'api' },
 ];
-
-
 
 export default function RewardsScreen({ navigation }) {
   const { t } = useLanguage();

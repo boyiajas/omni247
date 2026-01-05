@@ -1,12 +1,6 @@
 import React, { useCallback, useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  SafeAreaView,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { typography } from '../../theme/colors';
 import { useNotifications } from '../../hooks/useNotifications';

@@ -6,15 +6,23 @@ import config from './config';
 // Initialize Pusher
 window.Pusher = Pusher;
 
+const isSecureConnection = Boolean(
+    config.API_URL?.startsWith('https://')
+    || config.WS_URL?.startsWith('wss://')
+    || `${config.REVERB_PORT}` === '443'
+);
+const reverbPort = Number(config.REVERB_PORT) || (isSecureConnection ? 443 : 80);
+const enabledTransports = isSecureConnection ? ['wss'] : ['ws'];
+
 // Configure Laravel Echo with Reverb
 const echo = new Echo({
     broadcaster: 'reverb',
     key: config.REVERB_APP_KEY || 'YOUR_REVERB_APP_KEY',
     wsHost: config.REVERB_HOST || 'omni-247.com',
-    wsPort: config.REVERB_PORT || 8080,
-    wssPort: config.REVERB_PORT || 8080,
-    forceTLS: config.ENV === 'production',
-    enabledTransports: ['ws', 'wss'],
+    wsPort: reverbPort,
+    wssPort: reverbPort,
+    forceTLS: isSecureConnection,
+    enabledTransports,
     authEndpoint: `${config.API_URL}/broadcasting/auth`,
     authorizer: (channel) => {
         return {

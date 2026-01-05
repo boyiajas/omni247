@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Button from '../../components/common/Button';
 import { typography, spacing } from '../../theme';
@@ -64,8 +65,9 @@ const ReportSuccessScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.content}>
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={styles.container}>
+                <View style={styles.content}>
                 <View style={styles.iconContainer}>
                     <Icon name="checkmark-circle" size={100} color={colors.success} />
                 </View>
@@ -99,8 +101,9 @@ const ReportSuccessScreen = ({ navigation }) => {
                     onPress={handleCreateAnother}
                     style={styles.button}
                 />
+                </View>
             </View>
-        </View>
+        </SafeAreaView>
     );
 };
 export default ReportSuccessScreen;

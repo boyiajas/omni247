@@ -21,7 +21,9 @@ class GeocodingService {
                 formattedAddress: null,
             };
         } catch (error) {
-            console.error('Reverse geocoding error:', error);
+            if (__DEV__) {
+                console.warn('Reverse geocoding failed:', error?.response?.status || error?.message || error);
+            }
             return {
                 address: null,
                 city: null,

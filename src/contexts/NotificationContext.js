@@ -13,6 +13,7 @@ export const NotificationProvider = ({ children }) => {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [realtimeStatus, setRealtimeStatus] = useState('disconnected');
+    const [realtimeError, setRealtimeError] = useState(null);
     const notificationsInFlight = useRef(false);
     const unreadInFlight = useRef(false);
     const lastNotificationsFetchAt = useRef(0);
@@ -61,20 +62,33 @@ export const NotificationProvider = ({ children }) => {
         // Set authentication token
         setEchoAuthToken(token);
 
+        const formatRealtimeError = (err) => {
+            if (!err) return 'Unknown realtime error.';
+            return (
+                err?.error?.data?.message
+                || err?.error?.message
+                || err?.message
+                || String(err)
+            );
+        };
+
         if (!connectionDebugBound && echo.connector?.pusher?.connection) {
             connectionDebugBound = true;
             const connection = echo.connector.pusher.connection;
             connection.bind('connecting', () => {
                 setRealtimeStatus('connecting');
+                setRealtimeError(null);
             });
             connection.bind('connected', () => {
                 setRealtimeStatus('connected');
+                setRealtimeError(null);
             });
             connection.bind('disconnected', () => {
                 setRealtimeStatus('disconnected');
             });
             connection.bind('error', (err) => {
                 setRealtimeStatus('error');
+                setRealtimeError(formatRealtimeError(err));
             });
         }
 
@@ -92,9 +106,11 @@ export const NotificationProvider = ({ children }) => {
             });
         userChannel.subscribed(() => {
             setRealtimeStatus('subscribed');
+            setRealtimeError(null);
         });
-        userChannel.error(() => {
+        userChannel.error((err) => {
             setRealtimeStatus('auth_error');
+            setRealtimeError(formatRealtimeError(err));
         });
 
         // Listen to public incidents channel
@@ -222,6 +238,7 @@ export const NotificationProvider = ({ children }) => {
         notifications,
         unreadCount,
         realtimeStatus,
+        realtimeError,
         loadNotifications,
         refreshUnreadCount,
         markAsRead,

@@ -422,7 +422,9 @@ class MapScreenContent extends React.Component {
     const user = authContext?.user;
     const unreadCount = notificationContext?.unreadCount ?? 0;
     const realtimeStatus = notificationContext?.realtimeStatus;
+    const realtimeError = notificationContext?.realtimeError;
     const isLive = realtimeStatus === 'subscribed';
+    const realtimeDebug = realtimeError || (isLive ? '' : realtimeStatus);
     const hasPermission = Boolean(locationContext?.hasPermission);
 
     const fallbackLabel =
@@ -523,9 +525,16 @@ class MapScreenContent extends React.Component {
                 </View>
               )}
             </TouchableOpacity>
-            <View style={styles.liveRow}>
-              <View style={[styles.liveDot, isLive ? styles.liveDotOn : styles.liveDotOff]} />
-              <Text style={styles.liveText}>{t('map.live')}</Text>
+            <View style={styles.liveColumn}>
+              <View style={styles.liveRow}>
+                <View style={[styles.liveDot, isLive ? styles.liveDotOn : styles.liveDotOff]} />
+                <Text style={styles.liveText}>{t('map.live')}</Text>
+              </View>
+              {realtimeDebug ? (
+                <Text style={styles.liveErrorText} numberOfLines={1}>
+                  {realtimeDebug}
+                </Text>
+              ) : null}
             </View>
           </View>
         </View>
@@ -851,10 +860,13 @@ const getStyles = (colors) => StyleSheet.create({
     color: colors.white,
     fontSize: 10,
   },
+  liveColumn: {
+    alignItems: 'flex-end',
+    marginRight: 10,
+  },
   liveRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 10,
   },
   liveDot: {
     width: 8,
@@ -873,6 +885,13 @@ const getStyles = (colors) => StyleSheet.create({
     color: colors.neutralMedium,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  liveErrorText: {
+    ...typography.small,
+    color: colors.neutralMedium,
+    fontSize: 9,
+    marginTop: 2,
+    maxWidth: 140,
   },
   mapContainer: {
     flex: 1,

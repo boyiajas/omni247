@@ -6,19 +6,32 @@ import config from './config';
 // Initialize Pusher
 window.Pusher = Pusher;
 
+const parseUrl = (value) => {
+    try {
+        return value ? new URL(value) : null;
+    } catch (error) {
+        return null;
+    }
+};
+
+const parsedWsUrl = parseUrl(config.WS_URL);
+const wsHostRaw = config.REVERB_HOST || parsedWsUrl?.hostname || 'omni-247.com';
+const wsHost = wsHostRaw.replace(/^wss?:\/\//, '').split('/')[0];
 const isSecureConnection = Boolean(
-    config.API_URL?.startsWith('https://')
-    || config.WS_URL?.startsWith('wss://')
+    parsedWsUrl?.protocol === 'wss:'
+    || config.API_URL?.startsWith('https://')
     || `${config.REVERB_PORT}` === '443'
 );
-const reverbPort = Number(config.REVERB_PORT) || (isSecureConnection ? 443 : 80);
+const reverbPort = Number(config.REVERB_PORT)
+    || (parsedWsUrl?.port ? Number(parsedWsUrl.port) : null)
+    || (isSecureConnection ? 443 : 80);
 const enabledTransports = isSecureConnection ? ['wss'] : ['ws'];
 
 // Configure Laravel Echo with Reverb
 const echo = new Echo({
     broadcaster: 'reverb',
     key: config.REVERB_APP_KEY || 'YOUR_REVERB_APP_KEY',
-    wsHost: config.REVERB_HOST || 'omni-247.com',
+    wsHost,
     wsPort: reverbPort,
     wssPort: reverbPort,
     forceTLS: isSecureConnection,

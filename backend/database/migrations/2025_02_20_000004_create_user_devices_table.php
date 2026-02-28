@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('device_uuid');
             $table->string('device_type')->nullable();
             $table->string('device_name')->nullable();
+            $table->string('device_model')->nullable();
+            $table->string('imei')->nullable();
             $table->string('app_version')->nullable();
             $table->string('os_version')->nullable();
             $table->string('last_ip')->nullable();

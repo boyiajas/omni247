@@ -8,3 +8,19 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# Axios / OkHttp / Okio
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class com.squareup.okhttp.** { *; }
+-keep interface com.squareup.okhttp.** { *; }
+-dontwarn com.squareup.okhttp.**
+-keep class okio.** { *; }
+-dontwarn okio.**
+-dontwarn javax.annotation.**
+-keep class com.fasterxml.jackson.** { *; }
+-dontwarn com.fasterxml.jackson.**
+
+# React Native
+-keep class com.facebook.react.devsupport.** { *; }
+-dontwarn com.facebook.react.devsupport.**

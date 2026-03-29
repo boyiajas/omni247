@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { reportsAPI } from '../../services/api/reports';
-import { API_BASE_URL } from '../../config/api';
 import { commentsAPI } from '../../services/api/comments';
 import { favoritesAPI } from '../../services/api/favorites';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import useThemedStyles from '../../theme/useThemedStyles';
+import { getReportMediaUrl } from '../../utils/mediaUrl';
 
 // Placeholder image for reports without media
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&q=80';
@@ -69,8 +69,6 @@ const formatTimeAgo = (dateString, t) => {
 };
 
 const formatRatingValue = (value) => (Number(value) || 0).toFixed(1);
-const API_HOST = API_BASE_URL.replace(/\/api\/?$/, '');
-
 const isCoordinateLocation = (value) => {
   if (!value) return false;
   const trimmed = value.toString().trim();
@@ -101,29 +99,7 @@ const normalizeLocation = (value, t) => {
 // Transform API report to feed format
 const transformApiReport = (report, t) => {
   // Get first media URL if available
-  let mediaUrl = null;
-  if (report.media && report.media.length > 0) {
-    // Media could have url or file_path property
-    mediaUrl = report.media[0].url || report.media[0].file_path || null;
-
-    console.log('[DEBUG] Original media URL:', mediaUrl);
-
-    if (mediaUrl) {
-      mediaUrl = mediaUrl
-        .replace('http://127.0.0.1:8000', API_HOST)
-        .replace('http://localhost:8000', API_HOST)
-        .replace('http://localhost', API_HOST)
-        .replace('http://10.0.2.2:8000', API_HOST);
-
-      if (mediaUrl.startsWith('/storage/')) {
-        mediaUrl = `${API_HOST}${mediaUrl}`;
-      } else if (!mediaUrl.startsWith('http')) {
-        mediaUrl = `${API_HOST}/storage/${mediaUrl}`;
-      }
-
-      console.log('[DEBUG] Fixed media URL:', mediaUrl);
-    }
-  }
+  const mediaUrl = getReportMediaUrl(report);
 
   const rawLocation = report.address
     || report.location_address

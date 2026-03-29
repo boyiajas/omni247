@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { reportsAPI } from '../../services/api/reports';
 import { commentsAPI } from '../../services/api/comments';
-import { API_BASE_URL } from '../../config/api';
 import Loading from '../../components/common/Loading';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { typography, spacing } from '../../theme';
@@ -26,6 +25,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import useThemedStyles from '../../theme/useThemedStyles';
+import { getReportMediaUrl } from '../../utils/mediaUrl';
 
 // Placeholder image for reports without media
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&q=80';
@@ -634,22 +634,7 @@ const ReportDetailScreen = ({ route, navigation }) => {
         other: colors.textSecondary,
     };
     const categoryColor = categoryColors[categoryName.toLowerCase()] || categoryColors.other;
-    const apiHost = API_BASE_URL.replace(/\/api\/?$/, '');
-
-    // Get media URL and fix for Android emulator
-    let mediaUrl = report.media?.[0]?.url || PLACEHOLDER_IMAGE;
-    if (mediaUrl && mediaUrl !== PLACEHOLDER_IMAGE) {
-        mediaUrl = mediaUrl
-            .replace('http://127.0.0.1:8000', apiHost)
-            .replace('http://localhost:8000', apiHost)
-            .replace('http://localhost', apiHost)
-            .replace('http://10.0.2.2:8000', apiHost);
-        if (mediaUrl.startsWith('/storage/')) {
-            mediaUrl = `${apiHost}${mediaUrl}`;
-        } else if (!mediaUrl.startsWith('http')) {
-            mediaUrl = `${apiHost}/storage/${mediaUrl}`;
-        }
-    }
+    const mediaUrl = getReportMediaUrl(report) || PLACEHOLDER_IMAGE;
 
     return (
         <SafeAreaView style={{ flex: 1 }}>

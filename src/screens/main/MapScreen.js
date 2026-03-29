@@ -423,8 +423,12 @@ class MapScreenContent extends React.Component {
     const unreadCount = notificationContext?.unreadCount ?? 0;
     const realtimeStatus = notificationContext?.realtimeStatus;
     const realtimeError = notificationContext?.realtimeError;
-    const isLive = realtimeStatus === 'subscribed';
-    const realtimeDebug = realtimeError || (isLive ? '' : realtimeStatus);
+    const normalizedRealtimeStatus = (realtimeStatus || '').toLowerCase();
+    const hasRealtimeIdentity = Boolean(authContext?.token && authContext?.user?.id);
+    const isLive = normalizedRealtimeStatus === 'subscribed' || normalizedRealtimeStatus === 'connected';
+    const isConnecting = normalizedRealtimeStatus === 'connecting';
+    const hasRealtimeFailure = normalizedRealtimeStatus === 'error' || normalizedRealtimeStatus === 'auth_error';
+    const realtimeDebug = realtimeError || (hasRealtimeFailure ? realtimeStatus : '');
     const hasPermission = Boolean(locationContext?.hasPermission);
 
     const fallbackLabel =
@@ -527,7 +531,18 @@ class MapScreenContent extends React.Component {
             </TouchableOpacity>
             <View style={styles.liveColumn}>
               <View style={styles.liveRow}>
-                <View style={[styles.liveDot, isLive ? styles.liveDotOn : styles.liveDotOff]} />
+                <View
+                  style={[
+                    styles.liveDot,
+                    isLive
+                      ? styles.liveDotOn
+                      : isConnecting
+                        ? styles.liveDotConnecting
+                        : hasRealtimeIdentity && hasRealtimeFailure
+                          ? styles.liveDotOff
+                          : styles.liveDotIdle,
+                  ]}
+                />
                 <Text style={styles.liveText}>{t('map.live')}</Text>
               </View>
               {realtimeDebug ? (
@@ -876,6 +891,12 @@ const getStyles = (colors) => StyleSheet.create({
   },
   liveDotOn: {
     backgroundColor: '#16A34A',
+  },
+  liveDotConnecting: {
+    backgroundColor: '#F59E0B',
+  },
+  liveDotIdle: {
+    backgroundColor: '#94A3B8',
   },
   liveDotOff: {
     backgroundColor: '#DC2626',

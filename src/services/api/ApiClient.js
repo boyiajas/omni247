@@ -11,6 +11,18 @@ const client = axios.create({
   },
 });
 
+const apiFallbacks = [config.API_URL, ...(config.API_FALLBACK_URLS || [])].filter(Boolean);
+
+const normalizeBase = (base) => (base || '').replace(/\/+$/, '');
+const isAbsoluteUrl = (url) => /^https?:\/\//i.test(url || '');
+
+const nextFallbackBase = (currentBase) => {
+  const current = normalizeBase(currentBase || config.API_URL);
+  const normalized = apiFallbacks.map(normalizeBase);
+  const index = normalized.indexOf(current);
+  return index >= 0 && index < normalized.length - 1 ? normalized[index + 1] : null;
+};
+
 client.interceptors.request.use(
   async (cfg) => {
     const token =
@@ -35,7 +47,25 @@ client.interceptors.request.use(
 
 client.interceptors.response.use(
   (res) => res,
-  (error) => {
+  async (error) => {
+    const cfg = error?.config || {};
+    const hasNetworkFailure = !error?.response;
+    const hasRetriedFallback = cfg?._retriedWithFallback === true;
+    const canRetryWithFallback = hasNetworkFailure && !hasRetriedFallback && !isAbsoluteUrl(cfg.url);
+
+    if (canRetryWithFallback) {
+      const retryBase = nextFallbackBase(cfg.baseURL);
+
+      if (retryBase) {
+        console.log('[API RETRY]', `${cfg.baseURL}${cfg.url}`, '->', `${retryBase}${cfg.url}`);
+        return client.request({
+          ...cfg,
+          baseURL: retryBase,
+          _retriedWithFallback: true,
+        });
+      }
+    }
+
     if (error?.response) {
       console.log(
         '[API ERROR]',

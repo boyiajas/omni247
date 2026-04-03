@@ -306,7 +306,7 @@ export default function AlertsScreen({ navigation }) {
     );
 
     if (alert?.reportId) {
-      alertsAPI.dismissAlert(alert.reportId, alert.section).catch(() => {});
+      alertsAPI.dismissAlert(alert.reportId, alert.section).catch(() => { });
     }
 
     navigation.navigate('ReportDetail', { reportId: alert.reportId || alert.id });
@@ -431,17 +431,17 @@ export default function AlertsScreen({ navigation }) {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('alerts.title')}</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.headerButton}
             onPress={markAllAsRead}>
             <Icon name="check-all" size={20} color={colors.neutralDark} />
             <Text style={styles.headerButtonText}>{t('alerts.markAllRead')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.headerButton}
             onPress={() => navigation.navigate('NotificationSettings')}>
             <Icon name="cog-outline" size={20} color={colors.neutralDark} />

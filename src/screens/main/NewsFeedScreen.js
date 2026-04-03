@@ -1316,7 +1316,7 @@ export default function NewsFeedScreen({ navigation }) {
   const canLoadMore = visibleCount < distanceSortedData.length;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         {showSearch ? (
           <View style={styles.searchInputContainer}>

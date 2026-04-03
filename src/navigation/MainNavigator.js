@@ -148,8 +148,9 @@ const MainTabs = () => {
                     backgroundColor: colors.white,
                     borderTopWidth: 1,
                     borderTopColor: colors.border,
-                    paddingBottom: Math.max(6, insets.bottom),
-                    height: 60 + insets.bottom,
+                    paddingBottom: Math.max(6, insets.bottom - 10),
+                    paddingTop: 16,
+                    height: 72 + insets.bottom,
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,

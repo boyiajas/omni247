@@ -323,16 +323,29 @@ class MapScreenContent extends React.Component {
       return;
     }
 
+    const prevLocation = this.state.userLocation;
     const nextLocation = {
       latitude: location.latitude,
       longitude: location.longitude,
     };
 
-    this.setState({
-      userLocation: nextLocation,
-      currentAddress: '',
-    });
-    this.resolveAddress(nextLocation);
+    // Calculate distance to avoid excessive geocoding calls for minor jitter
+    const distanceKm = this.getDistanceKm(
+      prevLocation.latitude,
+      prevLocation.longitude,
+      nextLocation.latitude,
+      nextLocation.longitude
+    );
+
+    // Update coordinates immediately for the map marker
+    this.setState({ userLocation: nextLocation });
+
+    // Only resolve address if it's the first time or we've moved significantly (> 20 meters)
+    // We don't clear currentAddress here anymore to prevent UI flickering to "Current location"
+    const isFirstLoad = !this.state.currentAddress;
+    if (isFirstLoad || distanceKm > 0.02) {
+      this.resolveAddress(nextLocation);
+    }
 
     if (this.mapRef.current) {
       this.mapRef.current.animateToRegion(
@@ -346,19 +359,33 @@ class MapScreenContent extends React.Component {
     }
   };
 
-  resolveAddress = async (location) => {
+  resolveAddress = async (location, retryCount = 0) => {
     const requestId = ++this.addressRequestId;
     try {
+      console.log('[MapScreen] Resolving address for:', location.latitude, location.longitude, '(Attempt:', retryCount + 1, ')');
       const result = await GeocodingService.reverseGeocode(location.latitude, location.longitude);
+
       if (this.addressRequestId !== requestId) {
         return;
       }
+
       const formatted = result?.formattedAddress || GeocodingService.formatAddress(result || {});
       if (formatted) {
+        console.log('[MapScreen] Address resolved:', formatted);
         this.setState({ currentAddress: formatted });
+      } else {
+        console.warn('[MapScreen] Geocoding returned empty result');
+        // Retry once after 2 seconds if empty result (could be a transient issue)
+        if (retryCount < 1) {
+          setTimeout(() => this.resolveAddress(location, retryCount + 1), 2000);
+        }
       }
     } catch (error) {
-      // Keep the coordinate fallback if reverse geocoding fails.
+      console.error('[MapScreen] Reverse geocoding error:', error);
+      // Retry once after 3 seconds on error
+      if (retryCount < 1) {
+        setTimeout(() => this.resolveAddress(location, retryCount + 1), 3000);
+      }
     }
   };
 

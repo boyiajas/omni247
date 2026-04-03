@@ -34,12 +34,15 @@ use Illuminate\Support\Facades\Route;
 
 require base_path('routes/channels.php');
 
-// Public API routes (no authentication required)
 Route::prefix('public')->group(function () {
     Route::get('/reports', [LandingController::class,  'publicNews']);
     Route::get('/stats', [LandingController::class, 'stats']);
     Route::get('/categories', [LandingController::class, 'categories']);
 });
+
+// Geocoding (Publicly accessible for app initialization)
+Route::get('/geocode', [GeocodingController::class, 'geocode']);
+Route::get('/geocode/reverse', [GeocodingController::class, 'reverse']);
 
 // Unauthenticated routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -94,10 +97,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/media/upload', [MediaController::class, 'upload']);
     Route::get('/media/{id}', [MediaController::class, 'show']);
     Route::delete('/media/{id}', [MediaController::class, 'destroy']);
-
-    // Geocoding
-    Route::get('/geocode', [GeocodingController::class, 'geocode']);
-    Route::get('/geocode/reverse', [GeocodingController::class, 'reverse']);
 
     // Alerts
     Route::get('/alerts', [AlertController::class, 'index']);

@@ -11,7 +11,5 @@
         <domain includeSubdomains="true">127.0.0.1</domain>
         <domain includeSubdomains="true">omni-247.com</domain>
         <domain includeSubdomains="true">www.omni-247.com</domain>
-        <domain includeSubdomains="true">api.omni-247.com</domain>
-        <domain includeSubdomains="true">ws.omni-247.com</domain>
     </domain-config>
 </network-security-config>

@@ -37,7 +37,7 @@ client.interceptors.request.use(
     console.log(
       '[API REQUEST]',
       (cfg.method || '').toUpperCase(),
-      `${cfg.baseURL}${cfg.url}`
+      `${cfg.baseURL || ''}${cfg.url || ''}`
     );
 
     return cfg;

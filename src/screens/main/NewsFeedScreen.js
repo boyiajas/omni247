@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, FlatList, RefreshControl, Dimensions, Alert, TextInput } from 'react-native';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, FlatList, RefreshControl, Dimensions, Alert, TextInput, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -147,8 +147,8 @@ export default function NewsFeedScreen({ navigation }) {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 15,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
       borderBottomWidth: 1,
       borderBottomColor: palette.border,
     },
@@ -208,10 +208,15 @@ export default function NewsFeedScreen({ navigation }) {
       fontWeight: '600',
     },
     categoriesContainer: {
-      paddingTop: 12,
-      paddingBottom: 0,
-      borderBottomWidth: 1,
-      borderBottomColor: palette.border,
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      zIndex: 10,
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      paddingVertical: 12,
+      borderTopWidth: 1,
+      borderTopColor: palette.border,
     },
     categoriesScroll: {
       paddingHorizontal: 15,
@@ -237,14 +242,14 @@ export default function NewsFeedScreen({ navigation }) {
       color: palette.white,
     },
     trendingSection: {
-      marginBottom: 20,
+      marginBottom: 10,
     },
     sectionHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingHorizontal: 20,
-      marginBottom: 15,
+      paddingHorizontal: 16,
+      marginBottom: 8,
     },
     sectionTitle: {
       ...typography.body,
@@ -268,13 +273,13 @@ export default function NewsFeedScreen({ navigation }) {
       fontWeight: '600',
     },
     trendingList: {
-      paddingLeft: 20,
+      paddingLeft: 16,
     },
     trendingCard: {
       width: width * 0.7,
-      height: 180,
+      height: 170, // Slight height reduction too
       borderRadius: 12,
-      marginRight: 15,
+      marginRight: 10,
       overflow: 'hidden',
       position: 'relative',
     },
@@ -323,9 +328,9 @@ export default function NewsFeedScreen({ navigation }) {
     feedItem: {
       backgroundColor: palette.white,
       borderRadius: 10,
-      marginHorizontal: 16,
-      marginBottom: 10,
-      padding: 12,
+      marginHorizontal: 12,
+      marginBottom: 8,
+      padding: 10,
       borderWidth: 1,
       borderColor: palette.border,
     },
@@ -696,6 +701,37 @@ export default function NewsFeedScreen({ navigation }) {
   const [showDistanceSheet, setShowDistanceSheet] = useState(false);
   const { categories: fetchedCategories } = useCategories();
   const { location } = useLocation();
+
+  const categoriesAnim = useRef(new Animated.Value(0)).current;
+  const categoriesTimeout = useRef(null);
+
+  const toggleCategories = useCallback((show) => {
+    Animated.spring(categoriesAnim, {
+      toValue: show ? 0 : 1,
+      useNativeDriver: false, // height/padding updates require false
+      friction: 8,
+      tension: 40,
+    }).start();
+  }, [categoriesAnim]);
+
+  const resetCategoriesTimer = useCallback(() => {
+    toggleCategories(true);
+    if (categoriesTimeout.current) {
+      clearTimeout(categoriesTimeout.current);
+    }
+    categoriesTimeout.current = setTimeout(() => {
+      toggleCategories(false);
+    }, 5000);
+  }, [toggleCategories]);
+
+  useEffect(() => {
+    resetCategoriesTimer();
+    return () => {
+      if (categoriesTimeout.current) {
+        clearTimeout(categoriesTimeout.current);
+      }
+    };
+  }, [resetCategoriesTimer]);
 
   // Get user's current coordinates
   const userLat = location?.latitude ?? user?.last_known_lat ?? null;
@@ -1357,45 +1393,18 @@ export default function NewsFeedScreen({ navigation }) {
         )}
       </View>
 
-      <View style={styles.categoriesContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesScroll}>
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category.id || 'all'}
-              style={[
-                styles.categoryButton,
-                selectedCategory === category.id && styles.categoryButtonActive,
-                selectedCategory === category.id && category.id && {
-                  backgroundColor: categoryColors[category.id],
-                },
-              ]}
-              onPress={() => setSelectedCategory(category.id)}>
-              <Icon
-                name={category.icon}
-                size={18}
-                color={selectedCategory === category.id ? colors.white : colors.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.categoryButtonText,
-                  selectedCategory === category.id && styles.categoryButtonTextActive,
-                ]}>
-                {category.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
 
       <FlatList
         data={visibleData}
         renderItem={renderFeedItem}
         keyExtractor={item => item.id}
-        contentContainerStyle={styles.feedList}
+        contentContainerStyle={[
+          styles.feedList,
+          { paddingBottom: 100 } // Space for bottom categories
+        ]}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={resetCategoriesTimer}
+        onMomentumScrollBegin={resetCategoriesTimer}
         ListHeaderComponent={renderTrendingSection}
         refreshControl={
           <RefreshControl
@@ -1427,48 +1436,107 @@ export default function NewsFeedScreen({ navigation }) {
         }
       />
 
-      {showDistanceSheet && (
-        <View style={styles.distanceSheetOverlay}>
-          <TouchableOpacity
-            style={styles.distanceSheetBackdrop}
-            activeOpacity={1}
-            onPress={() => setShowDistanceSheet(false)}
-          />
-          <View style={styles.distanceSheet}>
-            <View style={styles.distanceSheetHandle} />
-            <Text style={styles.distanceSheetTitle}>{t('newsfeed.distanceSheetTitle')}</Text>
-            {[
-              { label: t('newsfeed.distanceAll'), value: null },
-              { label: t('newsfeed.distance2'), value: 2 },
-              { label: t('newsfeed.distance5'), value: 5 },
-              { label: t('newsfeed.distance10'), value: 10 },
-              { label: t('newsfeed.distance25'), value: 25 },
-              { label: t('newsfeed.distance50'), value: 50 },
-            ].map(option => (
-              <TouchableOpacity
-                key={String(option.value)}
-                style={styles.distanceSheetItem}
-                onPress={() => {
-                  setDistanceRange(option.value);
-                  setShowDistanceSheet(false);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.distanceSheetText,
-                    distanceRange === option.value && styles.distanceSheetTextActive,
-                  ]}
+      <Animated.View
+        style={[
+          styles.categoriesContainer,
+          {
+            height: categoriesAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [60, 0],
+            }),
+            opacity: categoriesAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 0],
+            }),
+            transform: [{
+              translateY: categoriesAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 100],
+              })
+            }],
+            overflow: 'hidden',
+          },
+        ]}
+      >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesScroll}>
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category.id || 'all'}
+              style={[
+                styles.categoryButton,
+                selectedCategory === category.id && styles.categoryButtonActive,
+                selectedCategory === category.id && category.id && {
+                  backgroundColor: categoryColors[category.id],
+                },
+              ]}
+              onPress={() => {
+                setSelectedCategory(category.id);
+                resetCategoriesTimer();
+              }}>
+              <Icon
+                name={category.icon}
+                size={18}
+                color={selectedCategory === category.id ? colors.white : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.categoryButtonText,
+                  selectedCategory === category.id && styles.categoryButtonTextActive,
+                ]}>
+                {category.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </Animated.View>
+
+      {
+        showDistanceSheet && (
+          <View style={styles.distanceSheetOverlay}>
+            <TouchableOpacity
+              style={styles.distanceSheetBackdrop}
+              activeOpacity={1}
+              onPress={() => setShowDistanceSheet(false)}
+            />
+            <View style={styles.distanceSheet}>
+              <View style={styles.distanceSheetHandle} />
+              <Text style={styles.distanceSheetTitle}>{t('newsfeed.distanceSheetTitle')}</Text>
+              {[
+                { label: t('newsfeed.distanceAll'), value: null },
+                { label: t('newsfeed.distance2'), value: 2 },
+                { label: t('newsfeed.distance5'), value: 5 },
+                { label: t('newsfeed.distance10'), value: 10 },
+                { label: t('newsfeed.distance25'), value: 25 },
+                { label: t('newsfeed.distance50'), value: 50 },
+              ].map(option => (
+                <TouchableOpacity
+                  key={String(option.value)}
+                  style={styles.distanceSheetItem}
+                  onPress={() => {
+                    setDistanceRange(option.value);
+                    setShowDistanceSheet(false);
+                  }}
                 >
-                  {option.label}
-                </Text>
-                {distanceRange === option.value && (
-                  <Icon name="check" size={18} color={colors.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.distanceSheetText,
+                      distanceRange === option.value && styles.distanceSheetTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  {distanceRange === option.value && (
+                    <Icon name="check" size={18} color={colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
-      )}
-    </SafeAreaView>
+        )
+      }
+    </SafeAreaView >
   );
 }

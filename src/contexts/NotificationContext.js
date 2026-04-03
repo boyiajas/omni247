@@ -72,24 +72,65 @@ export const NotificationProvider = ({ children }) => {
             );
         };
 
-        if (!connectionDebugBound && echo.connector?.pusher?.connection) {
+        const bindStatusListeners = () => {
+            if (connectionDebugBound) return;
+            const connection = echo.connector?.pusher?.connection;
+            if (!connection) return;
+
             connectionDebugBound = true;
-            const connection = echo.connector.pusher.connection;
+            console.log('[NotificationContext] Binding Reverb status listeners');
+
+            // Force initial status check
+            const currentStatus = (connection.state || '').toLowerCase();
+            if (currentStatus) {
+                console.log('[NotificationContext] Initial status:', currentStatus);
+                setRealtimeStatus(currentStatus === 'initialized' ? 'disconnected' : currentStatus);
+            }
+
             connection.bind('connecting', () => {
+                console.log('[NotificationContext] Connecting...');
                 setRealtimeStatus('connecting');
                 setRealtimeError(null);
             });
             connection.bind('connected', () => {
+                console.log('[NotificationContext] Connected!');
                 setRealtimeStatus('connected');
                 setRealtimeError(null);
             });
+            connection.bind('unavailable', () => {
+                console.warn('[NotificationContext] Reverb unavailable');
+                setRealtimeStatus('unavailable');
+            });
+            connection.bind('failed', () => {
+                console.error('[NotificationContext] Reverb connection failed');
+                setRealtimeStatus('failed');
+            });
             connection.bind('disconnected', () => {
+                console.log('[NotificationContext] Disconnected');
                 setRealtimeStatus('disconnected');
             });
             connection.bind('error', (err) => {
+                const errorMessage = formatRealtimeError(err);
+                console.error('[NotificationContext] Connection error:', errorMessage);
                 setRealtimeStatus('error');
-                setRealtimeError(formatRealtimeError(err));
+                setRealtimeError(errorMessage);
             });
+        };
+
+        // Try binding immediately
+        bindStatusListeners();
+
+        // If not ready yet, check periodicially until bound
+        if (!connectionDebugBound) {
+            const checkInterval = setInterval(() => {
+                bindStatusListeners();
+                if (connectionDebugBound) {
+                    clearInterval(checkInterval);
+                }
+            }, 500);
+
+            // Safety timeout
+            setTimeout(() => clearInterval(checkInterval), 10000);
         }
 
         // Listen to user's private channel

@@ -58,6 +58,8 @@ class MapScreenContent extends React.Component {
     this.mapRef = React.createRef();
     this.addressRequestId = 0;
     this.slideAnim = new Animated.Value(0);
+    this.categoriesAnim = new Animated.Value(0);
+    this.categoriesTimeout = null;
     this.state = {
       hasMapError: false,
       selectedCategory: null,
@@ -94,11 +96,13 @@ class MapScreenContent extends React.Component {
     this.syncLocationFromProps(this.props);
     this.requestLocationAccess();
     this.loadReports();
+    this.resetCategoriesTimer();
 
     if (this.props.navigation?.addListener) {
       this.focusUnsubscribe = this.props.navigation.addListener('focus', () => {
         this.requestLocationAccess();
         this.loadReports();
+        this.resetCategoriesTimer();
       });
     }
   }
@@ -107,7 +111,29 @@ class MapScreenContent extends React.Component {
     if (this.focusUnsubscribe) {
       this.focusUnsubscribe();
     }
+    if (this.categoriesTimeout) {
+      clearTimeout(this.categoriesTimeout);
+    }
   }
+
+  toggleCategories = (show) => {
+    Animated.spring(this.categoriesAnim, {
+      toValue: show ? 0 : 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 40,
+    }).start();
+  };
+
+  resetCategoriesTimer = () => {
+    this.toggleCategories(true);
+    if (this.categoriesTimeout) {
+      clearTimeout(this.categoriesTimeout);
+    }
+    this.categoriesTimeout = setTimeout(() => {
+      this.toggleCategories(false);
+    }, 5000);
+  };
 
   componentDidUpdate(prevProps) {
     const prevLocation = prevProps.locationContext?.location;
@@ -593,6 +619,8 @@ class MapScreenContent extends React.Component {
             }}
             showsUserLocation={hasPermission}
             showsMyLocationButton={true}
+            onPanDrag={this.resetCategoriesTimer}
+            onPress={this.resetCategoriesTimer}
           >
             {filteredReports.map((report) => (
               <Marker
@@ -645,80 +673,94 @@ class MapScreenContent extends React.Component {
               <Icon name="minus" size={18} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
-        </View>
 
-        <View style={styles.categoriesContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesScroll}
+          <Animated.View
+            style={[
+              styles.categoriesContainer,
+              {
+                transform: [
+                  {
+                    translateY: this.categoriesAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 150], // Slide down 150 units to hide
+                    }),
+                  },
+                ],
+              },
+            ]}
           >
-            <TouchableOpacity
-              style={[
-                styles.categoryButton,
-                this.state.selectedCategory === null && styles.categoryButtonActive,
-              ]}
-              onPress={() => this.handleSelectCategory(null)}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoriesScroll}
             >
-              <Icon
-                name="earth"
-                size={20}
-                color={this.state.selectedCategory === null ? colors.white : colors.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.categoryButtonText,
-                  this.state.selectedCategory === null && styles.categoryButtonTextActive,
-                ]}
-              >
-                {t('map.categoryAll')}
-              </Text>
-            </TouchableOpacity>
-
-            {this.state.categories.map((category) => (
               <TouchableOpacity
-                key={category.slug || category.backendId}
                 style={[
                   styles.categoryButton,
-                  this.state.selectedCategory === category.slug && styles.categoryButtonActive,
-                  this.state.selectedCategory === category.slug && { backgroundColor: category.color },
+                  this.state.selectedCategory === null && styles.categoryButtonActive,
                 ]}
-                onPress={() => this.handleSelectCategory(category.slug)}
+                onPress={() => this.handleSelectCategory(null)}
               >
                 <Icon
-                  name={category.icon}
+                  name="earth"
                   size={20}
-                  color={
-                    this.state.selectedCategory === category.slug
-                      ? colors.white
-                      : colors.textSecondary
-                  }
+                  color={this.state.selectedCategory === null ? colors.white : colors.textSecondary}
                 />
                 <Text
                   style={[
                     styles.categoryButtonText,
-                    this.state.selectedCategory === category.slug && styles.categoryButtonTextActive,
+                    this.state.selectedCategory === null && styles.categoryButtonTextActive,
                   ]}
                 >
-                  {category.slug === 'crime'
-                    ? t('map.fallbackCategories.crime')
-                    : category.slug === 'accident'
-                      ? t('map.fallbackCategories.accidents')
-                      : category.slug === 'event'
-                        ? t('map.fallbackCategories.events')
-                        : category.slug === 'environment'
-                          ? t('map.fallbackCategories.environment')
-                          : category.slug === 'politics'
-                            ? t('map.fallbackCategories.politics')
-                            : category.slug === 'infrastructure'
-                              ? t('map.fallbackCategories.infrastructure')
-                              : category.slug === 'other'
-                                ? t('map.fallbackCategories.other')
-                                : category.label}
+                  {t('map.categoryAll')}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+
+              {this.state.categories.map((category) => (
+                <TouchableOpacity
+                  key={category.slug || category.backendId}
+                  style={[
+                    styles.categoryButton,
+                    this.state.selectedCategory === category.slug && styles.categoryButtonActive,
+                    this.state.selectedCategory === category.slug && { backgroundColor: category.color },
+                  ]}
+                  onPress={() => this.handleSelectCategory(category.slug)}
+                >
+                  <Icon
+                    name={category.icon}
+                    size={20}
+                    color={
+                      this.state.selectedCategory === category.slug
+                        ? colors.white
+                        : colors.textSecondary
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.categoryButtonText,
+                      this.state.selectedCategory === category.slug && styles.categoryButtonTextActive,
+                    ]}
+                  >
+                    {category.slug === 'crime'
+                      ? t('map.fallbackCategories.crime')
+                      : category.slug === 'accident'
+                        ? t('map.fallbackCategories.accidents')
+                        : category.slug === 'event'
+                          ? t('map.fallbackCategories.events')
+                          : category.slug === 'environment'
+                            ? t('map.fallbackCategories.environment')
+                            : category.slug === 'politics'
+                              ? t('map.fallbackCategories.politics')
+                              : category.slug === 'infrastructure'
+                                ? t('map.fallbackCategories.infrastructure')
+                                : category.slug === 'other'
+                                  ? t('map.fallbackCategories.other')
+                                  : category.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </Animated.View>
         </View>
 
         <TouchableOpacity style={styles.reportButton} onPress={() => navigation.navigate('ReportFlow')}>
@@ -726,34 +768,36 @@ class MapScreenContent extends React.Component {
           <Text style={styles.reportButtonText}>{t('map.reportIncident')}</Text>
         </TouchableOpacity>
 
-        {this.state.legendExpanded ? (
-          <View style={styles.legend}>
-            <View style={styles.legendHeader}>
-              <Text style={styles.legendTitle}>{t('map.legendTitle')}</Text>
-              <TouchableOpacity onPress={() => this.toggleLegend(false)}>
-                <Icon name="close" size={20} color={colors.textPrimary} />
-              </TouchableOpacity>
+        {
+          this.state.legendExpanded ? (
+            <View style={styles.legend}>
+              <View style={styles.legendHeader}>
+                <Text style={styles.legendTitle}>{t('map.legendTitle')}</Text>
+                <TouchableOpacity onPress={() => this.toggleLegend(false)}>
+                  <Icon name="close" size={20} color={colors.textPrimary} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.legendItems}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: categoryColors.crime }]} />
+                  <Text style={styles.legendText}>{t('map.legendCrime')}</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: categoryColors.event }]} />
+                  <Text style={styles.legendText}>{t('map.legendEvents')}</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: categoryColors.environment }]} />
+                  <Text style={styles.legendText}>{t('map.legendEnvironment')}</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.legendItems}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: categoryColors.crime }]} />
-                <Text style={styles.legendText}>{t('map.legendCrime')}</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: categoryColors.event }]} />
-                <Text style={styles.legendText}>{t('map.legendEvents')}</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: categoryColors.environment }]} />
-                <Text style={styles.legendText}>{t('map.legendEnvironment')}</Text>
-              </View>
-            </View>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.legendMinimized} onPress={() => this.toggleLegend(true)}>
-            <Icon name="map-legend" size={22} color={colors.white} />
-          </TouchableOpacity>
-        )}
+          ) : (
+            <TouchableOpacity style={styles.legendMinimized} onPress={() => this.toggleLegend(true)}>
+              <Icon name="map-legend" size={22} color={colors.white} />
+            </TouchableOpacity>
+          )
+        }
 
         <Modal
           visible={this.state.showViewMenu}
@@ -825,7 +869,7 @@ class MapScreenContent extends React.Component {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
-      </SafeAreaView>
+      </SafeAreaView >
     );
   }
 }
@@ -869,9 +913,9 @@ const getStyles = (colors) => StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    paddingTop: 21,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: 18,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutralLight,
   },
@@ -952,13 +996,13 @@ const getStyles = (colors) => StyleSheet.create({
   locationCard: {
     position: 'absolute',
     top: 10,
-    left: 10,
+    left: 12,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.white,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -996,8 +1040,8 @@ const getStyles = (colors) => StyleSheet.create({
     backgroundColor: colors.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingBottom: 30,
     paddingTop: 12,
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: -3 },
@@ -1073,21 +1117,27 @@ const getStyles = (colors) => StyleSheet.create({
     borderBottomColor: colors.neutralLight,
   },
   categoriesContainer: {
-    paddingTop: 12,
-    paddingBottom: 0,
-    backgroundColor: colors.white,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingVertical: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopWidth: 1,
+    borderTopColor: colors.neutralLight,
+    zIndex: 10,
   },
   categoriesScroll: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
   },
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.neutralLight,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    marginRight: 12,
   },
   categoryButtonActive: {
     backgroundColor: colors.primary,

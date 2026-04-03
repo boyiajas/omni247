@@ -28,25 +28,27 @@ export default function AlertsScreen({ navigation }) {
   const { t } = useLanguage();
   const { theme } = useTheme();
   const colors = theme.colors;
+  const palette = colors;
   const alertTypeColors = getAlertTypeColors(colors);
-  const styles = useThemedStyles(() => ({
+  const styles = useThemedStyles((palette) => ({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: palette.background,
     },
     header: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 15,
-      paddingTop: 21,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      paddingTop: 18,
       borderBottomWidth: 1,
-      borderBottomColor: colors.neutralLight,
+      borderBottomColor: palette.border,
     },
     headerTitle: {
-      ...typography.h2,
-      color: colors.neutralDark,
+      fontSize: 24,
+      fontWeight: '700',
+      color: palette.textPrimary,
     },
     headerActions: {
       flexDirection: 'row',
@@ -56,73 +58,81 @@ export default function AlertsScreen({ navigation }) {
       flexDirection: 'row',
       alignItems: 'center',
       marginLeft: 15,
+      padding: 4,
     },
     headerButtonText: {
-      ...typography.caption,
-      color: colors.neutralDark,
+      fontSize: 14,
+      color: palette.textSecondary,
       marginLeft: 5,
+      fontWeight: '500',
     },
     alertsList: {
       paddingHorizontal: 12,
-      paddingBottom: 8,
+      paddingBottom: 16,
     },
     sectionHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginTop: 14,
+      marginTop: 12,
       marginBottom: 8,
     },
     sectionTitle: {
-      ...typography.body,
-      color: colors.neutralDark,
-      fontWeight: '600',
+      fontSize: 13,
+      color: palette.textSecondary,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1.2,
     },
     unreadCountBadge: {
-      backgroundColor: colors.secondary,
+      backgroundColor: palette.primary,
       paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 12,
+      paddingVertical: 2,
+      borderRadius: 10,
       marginLeft: 10,
     },
     unreadCountText: {
-      ...typography.small,
-      color: colors.white,
-      fontWeight: '600',
+      fontSize: 11,
+      color: palette.white,
+      fontWeight: '700',
     },
     alertItem: {
       flexDirection: 'row',
-      backgroundColor: colors.white,
+      backgroundColor: palette.white,
       borderRadius: 12,
-      padding: 8,
-      marginBottom: 6,
+      padding: 10,
+      marginBottom: 8,
       borderWidth: 1,
-      borderColor: colors.neutralLight,
+      borderColor: palette.border,
+      // Status bar style
+      borderLeftWidth: 3,
+      position: 'relative',
     },
     alertItemUnread: {
-      borderColor: colors.primary,
-      borderWidth: 1.5,
+      backgroundColor: `${palette.primary}05`,
+      borderColor: palette.border,
     },
     alertIconContainer: {
       marginRight: 10,
-      position: 'relative',
+      justifyContent: 'center',
     },
     alertIconBackground: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: palette.background,
     },
     unreadDot: {
       position: 'absolute',
-      top: -2,
-      right: -2,
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-      backgroundColor: colors.primary,
+      top: 0,
+      right: 0,
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: palette.primary,
       borderWidth: 2,
-      borderColor: colors.white,
+      borderColor: palette.white,
     },
     alertContent: {
       flex: 1,
@@ -131,89 +141,97 @@ export default function AlertsScreen({ navigation }) {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: 6,
+      marginBottom: 2,
     },
     alertTitle: {
-      ...typography.body,
-      color: colors.neutralDark,
-      fontWeight: '600',
+      fontSize: 15,
+      color: palette.textPrimary,
+      fontWeight: '700',
       flex: 1,
       marginRight: 10,
+      lineHeight: 20,
     },
     actionRequiredBadge: {
-      backgroundColor: `${colors.secondary}20`,
+      backgroundColor: `${palette.secondary}15`,
       paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 12,
+      paddingVertical: 3,
+      borderRadius: 6,
     },
     actionRequiredText: {
-      ...typography.small,
-      color: colors.secondary,
-      fontWeight: '600',
+      fontSize: 10,
+      color: palette.secondary,
+      fontWeight: '800',
+      textTransform: 'uppercase',
     },
     alertDescription: {
-      ...typography.caption,
-      color: colors.neutralMedium,
-      marginBottom: 8,
+      fontSize: 13,
+      color: palette.textSecondary,
       lineHeight: 18,
+      marginBottom: 6,
     },
     alertMeta: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      marginBottom: 8,
+      marginTop: 2,
     },
     metaItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginRight: 15,
-      marginBottom: 5,
+      marginRight: 12,
+      marginBottom: 4,
     },
     metaText: {
-      ...typography.small,
-      color: colors.neutralMedium,
+      fontSize: 11,
+      color: palette.textSecondary,
       marginLeft: 4,
     },
     actionButtons: {
       flexDirection: 'row',
+      marginTop: 10,
     },
     acknowledgeButton: {
-      backgroundColor: colors.primary,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 20,
-      marginRight: 10,
+      backgroundColor: palette.primary,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+      marginRight: 8,
     },
     acknowledgeButtonText: {
-      ...typography.caption,
-      color: colors.white,
+      fontSize: 12,
+      color: palette.white,
       fontWeight: '600',
     },
     detailsButton: {
-      backgroundColor: colors.neutralLight,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 20,
+      backgroundColor: palette.background,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: palette.border,
     },
     detailsButtonText: {
-      ...typography.caption,
-      color: colors.neutralDark,
+      fontSize: 12,
+      color: palette.textPrimary,
       fontWeight: '600',
     },
     emptyState: {
       alignItems: 'center',
+      justifyContent: 'center',
       padding: 40,
+      marginTop: 60,
     },
     emptyStateTitle: {
-      ...typography.h3,
-      color: colors.neutralMedium,
-      marginTop: 20,
-      marginBottom: 10,
+      fontSize: 18,
+      fontWeight: '700',
+      color: palette.textPrimary,
+      marginTop: 16,
+      marginBottom: 8,
     },
     emptyStateText: {
-      ...typography.body,
-      color: colors.neutralMedium,
+      fontSize: 14,
+      color: palette.textSecondary,
       textAlign: 'center',
-      lineHeight: 22,
+      lineHeight: 20,
     },
     emptySection: {
       flexDirection: 'row',
@@ -333,16 +351,20 @@ export default function AlertsScreen({ navigation }) {
   const renderAlertItem = ({ item }) => {
     return (
       <TouchableOpacity
-        style={[styles.alertItem, !item.isRead && styles.alertItemUnread]}
+        style={[
+          styles.alertItem,
+          !item.isRead && styles.alertItemUnread,
+          { borderLeftColor: alertTypeColors[item.type] || palette.primary }
+        ]}
         onPress={() => handleAlertPress(item)}>
         <View style={styles.alertIconContainer}>
           <View style={[
             styles.alertIconBackground,
-            { backgroundColor: `${alertTypeColors[item.type]}20` }
+            { backgroundColor: `${alertTypeColors[item.type]}15` }
           ]}>
             <Icon
               name={alertTypeIcons[item.type]}
-              size={24}
+              size={22}
               color={alertTypeColors[item.type]}
             />
           </View>
@@ -368,18 +390,18 @@ export default function AlertsScreen({ navigation }) {
           <View style={styles.alertMeta}>
             {item.location && (
               <View style={styles.metaItem}>
-                <Icon name="map-marker" size={12} color={colors.neutralMedium} />
+                <Icon name="map-marker" size={12} color={palette.textSecondary} />
                 <Text style={styles.metaText}>{item.location}</Text>
               </View>
             )}
             {item.distance && (
               <View style={styles.metaItem}>
-                <Icon name="map-marker-distance" size={12} color={colors.neutralMedium} />
+                <Icon name="map-marker-distance" size={12} color={palette.textSecondary} />
                 <Text style={styles.metaText}>{item.distance}</Text>
               </View>
             )}
             <View style={styles.metaItem}>
-              <Icon name="clock-outline" size={12} color={colors.neutralMedium} />
+              <Icon name="clock-outline" size={12} color={palette.textSecondary} />
               <Text style={styles.metaText}>{item.timeAgo}</Text>
             </View>
           </View>
@@ -416,9 +438,9 @@ export default function AlertsScreen({ navigation }) {
   const renderSectionFooter = ({ section }) => {
     if (section.key === 'positive' && section.data.length === 0) {
       return (
-        <View style={styles.emptySection}>
-          <Icon name="information-outline" size={18} color={colors.neutralMedium} />
-          <Text style={styles.emptySectionText}>{t('alerts.emptySection')}</Text>
+        <View style={[styles.emptySection, { padding: 16, alignItems: 'center', opacity: 0.6 }]}>
+          <Icon name="information-outline" size={18} color={palette.textSecondary} />
+          <Text style={[styles.emptySectionText, { color: palette.textSecondary, marginTop: 4, fontSize: 13 }]}>{t('alerts.emptySection')}</Text>
         </View>
       );
     }

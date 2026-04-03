@@ -148,13 +148,17 @@ const MainTabs = () => {
                     backgroundColor: colors.white,
                     borderTopWidth: 1,
                     borderTopColor: colors.border,
-                    paddingBottom: Math.max(6, insets.bottom - 10),
-                    paddingTop: 16,
-                    height: 72 + insets.bottom,
+                    paddingBottom: Math.max(2, insets.bottom),
+                    paddingTop: 2,
+                    height: 48 + insets.bottom,
+                },
+                tabBarIconStyle: {
+                    marginTop: 6,
                 },
                 tabBarLabelStyle: {
-                    fontSize: 12,
+                    fontSize: 10,
                     fontWeight: '600',
+                    marginBottom: 0,
                 },
             })}>
             <Tab.Screen name="Map" component={MapScreen} options={{ title: t('tabs.map') }} />

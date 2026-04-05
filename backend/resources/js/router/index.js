@@ -19,6 +19,7 @@ import MapView from '@/views/MapView.vue';
 import SettingsView from '@/views/SettingsView.vue';
 import SupportTicketsView from '@/views/SupportTicketsView.vue';
 import ReportVerificationView from '@/views/ReportVerificationView.vue';
+import PrivacyView from '@/views/PrivacyView.vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -27,6 +28,12 @@ const router = createRouter({
             path: '/',
             name: 'landing',
             component: LandingView,
+            meta: { public: true },
+        },
+        {
+            path: '/privacy',
+            name: 'privacy',
+            component: PrivacyView,
             meta: { public: true },
         },
         {

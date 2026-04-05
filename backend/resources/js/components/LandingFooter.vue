@@ -18,7 +18,7 @@
         
         <div class="footer-column">
           <h4 class="footer-heading">Legal</h4>
-          <a href="#" class="footer-link">Privacy Policy</a>
+          <router-link to="/privacy" class="footer-link">Privacy Policy</router-link>
           <a href="#" class="footer-link">Terms of Service</a>
           <a href="#" class="footer-link">Cookie Policy</a>
         </div>

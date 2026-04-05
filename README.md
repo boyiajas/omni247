@@ -1,4 +1,4 @@
-# G-iReport - React Native App
+# Omni247 - React Native App
 
 Global Incident Reporting Application built with React Native CLI.
 

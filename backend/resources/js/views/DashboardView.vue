@@ -1,82 +1,95 @@
 <template>
-    <div class="grid">
-        <div class="stats">
-            <StatCard
-                v-for="card in statCards"
-                :key="card.label"
-                :label="card.label"
-                :value="card.value"
-                :trend="card.trend"
-                :accent="card.accent"
-            >
-                <template #icon>
-                    <span v-html="card.icon"></span>
-                </template>
-            </StatCard>
+        <div v-if="loading" class="panel wide loading-panel">
+            <div class="loader"></div>
+            <p>Loading command metrics...</p>
         </div>
 
-        <div class="panel wide">
-            <div class="panel-head">
-                <div>
-                    <p class="panel-label">Status overview</p>
-                    <h3>Incident workflow</h3>
-                </div>
-            </div>
-            <div class="chart">
-                <div v-for="item in statusBreakdown" :key="item.label" class="bar">
-                    <div class="bar-fill" :style="{ height: item.percent + '%', background: item.color }"></div>
-                    <p>{{ item.label }}</p>
-                    <span>{{ item.count }}</span>
-                </div>
-            </div>
+        <div v-else-if="error" class="panel wide error-panel">
+            <div class="error-icon">⚠️</div>
+            <h3>Dashboard Error</h3>
+            <p>{{ error }}</p>
+            <button @click="fetchOverview" class="btn-retry">Retry Access</button>
         </div>
 
-        <div class="panel">
-            <div class="panel-head">
-                <p class="panel-label">Device mix</p>
-                <h3>Active installations</h3>
+        <template v-else-if="overview">
+            <div class="stats">
+                <StatCard
+                    v-for="card in statCards"
+                    :key="card.label"
+                    :label="card.label"
+                    :value="card.value"
+                    :trend="card.trend"
+                    :accent="card.accent"
+                >
+                    <template #icon>
+                        <span v-html="card.icon"></span>
+                    </template>
+                </StatCard>
             </div>
-            <ul class="device-list">
-                <li v-for="device in deviceStats" :key="device.device_type">
+
+            <div class="panel wide">
+                <div class="panel-head">
                     <div>
-                        <p class="device-type">{{ device.device_type ?? 'Unknown' }}</p>
-                        <p class="device-sub">{{ device.total }} devices</p>
+                        <p class="panel-label">Status overview</p>
+                        <h3>Incident workflow</h3>
                     </div>
-                    <span class="badge">{{ device.percent }}%</span>
-                </li>
-            </ul>
-        </div>
-
-        <div class="panel">
-            <div class="panel-head">
-                <p class="panel-label">Recent reports</p>
-                <h3>Live feed</h3>
+                </div>
+                <div class="chart">
+                    <div v-for="item in statusBreakdown" :key="item.label" class="bar">
+                        <div class="bar-fill" :style="{ height: item.percent + '%', background: item.color }"></div>
+                        <p>{{ item.label }}</p>
+                        <span>{{ item.count }}</span>
+                    </div>
+                </div>
             </div>
-            <ul class="reports">
-                <li v-for="report in recentReports" :key="report.id">
-                    <div class="report-row">
+
+            <div class="panel">
+                <div class="panel-head">
+                    <p class="panel-label">Device mix</p>
+                    <h3>Active installations</h3>
+                </div>
+                <ul class="device-list">
+                    <li v-for="device in deviceStats" :key="device.device_type">
                         <div>
-                            <p class="report-title">{{ report.title }}</p>
-                            <p class="report-meta">{{ report.category?.name }} • {{ formatTime(report.created_at) }}</p>
+                            <p class="device-type">{{ device.device_type ?? 'Unknown' }}</p>
+                            <p class="device-sub">{{ device.total }} devices</p>
                         </div>
-                        <span class="status" :class="report.status">{{ report.status }}</span>
-                    </div>
-                </li>
-            </ul>
-        </div>
-
-        <div class="panel">
-            <div class="panel-head">
-                <p class="panel-label">Audit trail</p>
-                <h3>Latest actions</h3>
+                        <span class="badge">{{ device.percent }}%</span>
+                    </li>
+                </ul>
             </div>
-            <ul class="audit">
-                <li v-for="item in auditFeed" :key="item.id">
-                    <p class="audit-desc">{{ item.description }}</p>
-                    <p class="audit-meta">{{ item.user?.name || 'System' }} • {{ formatTime(item.created_at) }}</p>
-                </li>
-            </ul>
-        </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <p class="panel-label">Recent reports</p>
+                    <h3>Live feed</h3>
+                </div>
+                <ul class="reports">
+                    <li v-for="report in recentReports" :key="report.id">
+                        <div class="report-row">
+                            <div>
+                                <p class="report-title">{{ report.title }}</p>
+                                <p class="report-meta">{{ report.category?.name }} • {{ formatTime(report.created_at) }}</p>
+                            </div>
+                            <span class="status" :class="report.status">{{ report.status }}</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <p class="panel-label">Audit trail</p>
+                    <h3>Latest actions</h3>
+                </div>
+                <ul class="audit">
+                    <li v-for="item in auditFeed" :key="item.id">
+                        <p class="audit-desc">{{ item.description }}</p>
+                        <p class="audit-meta">{{ item.user?.name || 'System' }} • {{ formatTime(item.created_at) }}</p>
+                    </li>
+                </ul>
+            </div>
+        </template>
     </div>
 </template>
 
@@ -85,15 +98,17 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import api from '@/services/api';
 import StatCard from '@/components/ui/StatCard.vue';
 
-const overview = ref(null);
-const loading = ref(true);
-const statusColors = ['#22c55e', '#0ea5e9', '#f97316', '#eab308', '#f43f5e'];
+const error = ref(null);
 
 const fetchOverview = async () => {
     loading.value = true;
+    error.value = null;
     try {
         const { data } = await api.get('/admin/overview');
         overview.value = data;
+    } catch (err) {
+        console.error('Dashboard Load Error:', err);
+        error.value = err.response?.data?.message || 'Failed to connect to the command server. Please verify database synchronization.';
     } finally {
         loading.value = false;
     }
@@ -166,9 +181,55 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('dashboard-refresh', fetchOverview);
 });
+const overview = ref(null);
+const statusColors = ['#22c55e', '#0ea5e9', '#f97316', '#eab308', '#f43f5e'];
 </script>
 
 <style scoped>
+.loading-panel, .error-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+}
+
+.loader {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #0ea5e9;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.btn-retry {
+    margin-top: 20px;
+    padding: 10px 24px;
+    background: #0ea5e9;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-retry:hover {
+    background: #0284c7;
+}
+
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

@@ -97,14 +97,19 @@ class DashboardController extends Controller
             ->take(6)
             ->get();
 
-        $viewsByHour = ReportView::select(
-                DB::raw("strftime('%H:00', created_at) as hour"),
-                DB::raw('count(*) as total')
-            )
-            ->where('created_at', '>=', now()->subHours(24))
-            ->groupBy('hour')
-            ->orderBy('hour')
-            ->get();
+        $viewsByHour = ReportView::where('created_at', '>=', now()->subHours(24))
+            ->get(['created_at'])
+            ->groupBy(function ($view) {
+                return $view->created_at->format('H:00');
+            })
+            ->map(function ($group, $hour) {
+                return [
+                    'hour' => $hour,
+                    'total' => $group->count(),
+                ];
+            })
+            ->sortBy('hour')
+            ->values();
 
         $weeklyReportsTotal = Report::where('created_at', '>=', $weekStart)->count();
         $weeklyVerified = Report::where('created_at', '>=', $weekStart)

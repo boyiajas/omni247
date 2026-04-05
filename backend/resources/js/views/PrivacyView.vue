@@ -1,82 +1,81 @@
 <template>
   <div class="privacy-page">
-    <nav class="simple-nav">
-      <router-link to="/" class="back-link">← Back to Home</router-link>
-      <div class="logo">Omni247</div>
-    </nav>
+    <LandingHeader />
 
-    <div class="content-container">
-      <h1>Privacy Policy</h1>
-      <p class="last-updated">Last Updated: April 2026</p>
+    <main class="page-body">
+      <div class="content-container">
+        <h1>Privacy Policy</h1>
+        <p class="last-updated">Last Updated: April 2026</p>
 
-      <section>
-        <h2>1. Introduction</h2>
-        <p>Omni247 ("we", "us", or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and share information when you use the Omni247 mobile application and our website.</p>
-      </section>
+        <section>
+          <h2>1. Introduction</h2>
+          <p>Omni247 ("we", "us", or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and share information when you use the Omni247 mobile application and our website.</p>
+        </section>
 
-      <section>
-        <h2>2. Information We Collect</h2>
-        <h3>2.1 Location Data</h3>
-        <p>We collect precise location data through our mobile application to allow you to report incidents accurately on our community map. This is essential for the core functionality of the service.</p>
-        
-        <h3>2.2 Media Content</h3>
-        <p>We collect photos and videos that you voluntarily upload while submitting incident reports. This media is used to verify and document reported events.</p>
+        <section>
+          <h2>2. Information We Collect</h2>
+          <h3>2.1 Location Data</h3>
+          <p>We collect precise location data through our mobile application to allow you to report incidents accurately on our community map. This is essential for the core functionality of the service.</p>
+          
+          <h3>2.2 Media Content</h3>
+          <p>We collect photos and videos that you voluntarily upload while submitting incident reports. This media is used to verify and document reported events.</p>
 
-        <h3>2.3 User Account Data</h3>
-        <p>When you register, we collect your name, email address, and phone number to manage your account and facilitate secure communication.</p>
-      </section>
+          <h3>2.3 User Account Data</h3>
+          <p>When you register, we collect your name, email address, and phone number to manage your account and facilitate secure communication.</p>
+        </section>
 
-      <section>
-        <h2>3. How We Use Your Information</h2>
-        <ul>
-          <li>To provide and maintain the Omni247 services.</li>
-          <li>To display incident reports on the interactive community map.</li>
-          <li>To verify report authenticity through our moderation systems.</li>
-          <li>To send critical safety alerts and updates regarding your reports.</li>
-          <li>To improve the app's performance and user experience.</li>
-        </ul>
-      </section>
+        <section>
+          <h2>3. How We Use Your Information</h2>
+          <ul>
+            <li>To provide and maintain the Omni247 services.</li>
+            <li>To display incident reports on the interactive community map.</li>
+            <li>To verify report authenticity through our moderation systems.</li>
+            <li>To send critical safety alerts and updates regarding your reports.</li>
+            <li>To improve the app's performance and user experience.</li>
+          </ul>
+        </section>
 
-      <section>
-        <h2>4. Data Sharing and Disclosure</h2>
-        <p>We do not sell your personal data. Because Omni247 is a community safety tool, incident report data (including the specific location and attached media) is shared publicly on the map for transparency and community awareness.</p>
-      </section>
+        <section>
+          <h2>4. Data Sharing and Disclosure</h2>
+          <p>We do not sell your personal data. Because Omni247 is a community safety tool, incident report data (including the specific location and attached media) is shared publicly on the map for transparency and community awareness.</p>
+        </section>
 
-      <section>
-        <h2>5. Your Rights and Choices</h2>
-        <p>You can manage your profile information within the app settings. You have the right to request the deletion of your account and all associated personal data by contacting our support team.</p>
-      </section>
+        <section>
+          <h2>5. Your Rights and Choices</h2>
+          <p>You can manage your profile information within the app settings. You have the right to request the deletion of your account and all associated personal data by contacting our support team.</p>
+        </section>
 
-      <section>
-        <h2>6. Contact Us</h2>
-        <p>If you have any questions or concerns about this Privacy Policy, please contact us at:</p>
-        <p class="contact-info">
-          Email: support@omni-247.com<br>
-          Website: https://omni-247.com
-        </p>
-      </section>
-    </div>
+        <section>
+          <h2>6. Contact Us</h2>
+          <p>If you have any questions or concerns about this Privacy Policy, please contact us at:</p>
+          <p class="contact-info">
+            Email: support@omni-247.com<br>
+            Website: https://omni-247.com
+          </p>
+        </section>
+      </div>
+    </main>
+
+    <LandingFooter />
   </div>
 </template>
 
 <script setup>
-// Minimal logic for the static page
+import LandingHeader from '@/components/LandingHeader.vue';
+import LandingFooter from '@/components/LandingFooter.vue';
 </script>
 
 <style scoped>
 .privacy-page {
   background: #f8fafc;
   min-height: 100vh;
-  color: #1e293b;
+  display: flex;
+  flex-direction: column;
 }
 
-.simple-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 40px;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+.page-body {
+  flex: 1;
+  padding: 40px 16px;
 }
 
 .back-link {

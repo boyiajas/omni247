@@ -1,4 +1,5 @@
 <template>
+    <div class="grid">
         <div v-if="loading" class="panel wide loading-panel">
             <div class="loader"></div>
             <p>Loading command metrics...</p>

@@ -42,14 +42,20 @@
 
         <section>
           <h2>5. Your Rights and Choices</h2>
-          <p>You can manage your profile information within the app settings. You have the right to request the deletion of your account and all associated personal data by contacting our support team.</p>
+          <p>You can manage your profile information within the app settings. You can also request account deletion and associated data deletion through our dedicated web page at <a href="https://omni-247.com/account-deletion">https://omni-247.com/account-deletion</a>.</p>
         </section>
 
         <section>
-          <h2>6. Contact Us</h2>
+          <h2>6. Account Deletion</h2>
+          <p>If you created an Omni247 account, you may request deletion of your account and associated personal data. We may retain limited records when required for fraud prevention, security, dispute resolution, or legal compliance.</p>
+          <p>To submit a deletion request, use our account deletion page: <a href="https://omni-247.com/account-deletion">https://omni-247.com/account-deletion</a>.</p>
+        </section>
+
+        <section>
+          <h2>7. Contact Us</h2>
           <p>If you have any questions or concerns about this Privacy Policy, please contact us at:</p>
           <p class="contact-info">
-            Email: support@omni-247.com<br>
+            Email: support@omni247.com<br>
             Website: https://omni-247.com
           </p>
         </section>

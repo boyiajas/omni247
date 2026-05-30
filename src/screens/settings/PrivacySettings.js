@@ -9,6 +9,7 @@ import {
     Alert,
     Modal,
     FlatList,
+    Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/common/Card';
@@ -18,6 +19,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import useThemedStyles from '../../theme/useThemedStyles';
+import { LEGAL_URLS } from '../../config/legal';
 
 // Custom Picker Component
 const CustomPicker = ({ label, value, options, onValueChange, t, styles, colors }) => {
@@ -299,6 +301,17 @@ const PrivacySettings = ({ navigation }) => {
         },
     });
 
+    const openAccountDeletionPage = async () => {
+        try {
+            await Linking.openURL(LEGAL_URLS.accountDeletion);
+        } catch (error) {
+            Alert.alert(
+                t('reportFlow.addressErrorTitle'),
+                'Unable to open the account deletion page right now.'
+            );
+        }
+    };
+
     const visibilityOptions = [
         { label: t('privacy.public'), value: 'public' },
         { label: t('privacy.friendsOnly'), value: 'friends_only' },
@@ -531,7 +544,10 @@ const PrivacySettings = ({ navigation }) => {
                     <Text style={styles.actionButtonText}>{t('privacy.downloadData')}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.actionButton, styles.dangerButton]}>
+                <TouchableOpacity
+                    style={[styles.actionButton, styles.dangerButton]}
+                    onPress={openAccountDeletionPage}
+                >
                     <Icon name="delete-forever" size={20} color={colors.error} />
                     <Text style={[styles.actionButtonText, styles.dangerButtonText]}>
                         {t('privacy.deleteAccount')}

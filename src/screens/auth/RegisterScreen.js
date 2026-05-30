@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { typography } from '../../theme/colors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import useThemedStyles from '../../theme/useThemedStyles';
+import { LEGAL_URLS } from '../../config/legal';
 
 export default function RegisterScreen({ navigation }) {
   const { register } = useAuth();
@@ -282,8 +283,9 @@ export default function RegisterScreen({ navigation }) {
   };
 
   const navigateToPrivacy = () => {
-    // TODO: Navigate to Privacy Policy screen
-    Alert.alert(t('auth.privacyTitle'), t('auth.privacyBody'));
+    Linking.openURL(LEGAL_URLS.privacyPolicy).catch(() => {
+      Alert.alert(t('auth.privacyTitle'), t('auth.privacyBody'));
+    });
   };
 
   return (

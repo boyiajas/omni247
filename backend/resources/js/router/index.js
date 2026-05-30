@@ -20,6 +20,7 @@ import SettingsView from '@/views/SettingsView.vue';
 import SupportTicketsView from '@/views/SupportTicketsView.vue';
 import ReportVerificationView from '@/views/ReportVerificationView.vue';
 import PrivacyView from '@/views/PrivacyView.vue';
+import AccountDeletionView from '@/views/AccountDeletionView.vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -34,6 +35,12 @@ const router = createRouter({
             path: '/privacy',
             name: 'privacy',
             component: PrivacyView,
+            meta: { public: true },
+        },
+        {
+            path: '/account-deletion',
+            name: 'account-deletion',
+            component: AccountDeletionView,
             meta: { public: true },
         },
         {

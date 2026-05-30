@@ -106,9 +106,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.omni247_com"
+    namespace "com.omni247.app"
     defaultConfig {
-        applicationId "com.omni247_com"
+        applicationId "com.omni247.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -144,6 +144,13 @@ android {
             signingConfig signingConfigs.release
             minifyEnabled true
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
+    }
+
+    packaging {
+        jniLibs {
+            // Avoid AGP/NDK strip task failures for debug native artifacts.
+            keepDebugSymbols += ["**/*.so"]
         }
     }
 }

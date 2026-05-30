@@ -1,4 +1,4 @@
-package com.omni247_com
+package com.omni247.app
 
 import android.app.Application
 import android.os.Build
